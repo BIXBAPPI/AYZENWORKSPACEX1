@@ -30,8 +30,13 @@ class LinkCodeResponse(BaseModel):
 
 
 @router.post("/register", status_code=201)
-async def register(body: RegisterRequest, request: Request) -> dict:
-    """Register new user with local bcrypt auth. Creates user + default tenant."""
+async def register(body: RegisterRequest, response: Response, request: Request) -> dict:
+    """Register new user with local bcrypt auth. Creates user + default tenant.
+    FIX #4: Issues JWT cookie immediately so user is logged in after registration.
+    FIX #10: Disables RLS for this transaction (bootstrap operation has no tenant yet).
+    """
+    from apps.api.app.middleware.auth import create_access_token
+
     db = request.app.state.db
     async with db() as session:
         existing = await session.execute(
@@ -46,6 +51,9 @@ async def register(body: RegisterRequest, request: Request) -> dict:
         tenant_slug = f"{body.email.split('@')[0].lower().replace('.', '-')[:40]}-{user_id[:8]}"
         pwd_hash = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
 
+        # FIX #10: Bypass RLS for bootstrap — no tenant context exists yet
+        await session.execute(text("SET LOCAL row_security = off"))
+
         await session.execute(
             text("INSERT INTO tenants (id, name, slug) VALUES (:tid, :name, :slug)"),
             {"tid": tenant_id, "name": body.full_name or body.email, "slug": tenant_slug},
@@ -57,9 +65,34 @@ async def register(body: RegisterRequest, request: Request) -> dict:
             """),
             {"uid": user_id, "tid": tenant_id, "email": body.email, "name": body.full_name, "pwd": pwd_hash},
         )
+        # Insert default user_settings row (avoids missing-row errors downstream)
+        await session.execute(
+            text("INSERT INTO user_settings (user_id) VALUES (:uid) ON CONFLICT DO NOTHING"),
+            {"uid": user_id},
+        )
+        # Insert default user_bot_state row
+        await session.execute(
+            text("""
+                INSERT INTO user_bot_state (user_id, locale)
+                VALUES (:uid, 'bn')
+                ON CONFLICT DO NOTHING
+            """),
+            {"uid": user_id},
+        )
         await session.commit()
 
-    return {"status": "registered", "email": body.email}
+    # FIX #4: Issue JWT cookie immediately — user is now authenticated
+    token = create_access_token(
+        user_id=user_id,
+        tenant_id=tenant_id,
+        email=body.email,
+        role="owner",
+    )
+    response.set_cookie(
+        "ayzen-token", token,
+        httponly=True, secure=True, samesite="none", max_age=86400, path="/",
+    )
+    return {"status": "registered", "email": body.email, "role": "owner"}
 
 
 @router.post("/login")
@@ -69,6 +102,8 @@ async def login(body: LoginRequest, response: Response, request: Request) -> dic
 
     db = request.app.state.db
     async with db() as session:
+        # FIX #10: Bypass RLS for auth lookup — no tenant context yet
+        await session.execute(text("SET LOCAL row_security = off"))
         result = await session.execute(
             text("SELECT id, tenant_id, role, password_hash FROM users WHERE email = :email"),
             {"email": body.email},

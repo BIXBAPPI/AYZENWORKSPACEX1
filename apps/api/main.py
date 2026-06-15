@@ -33,7 +33,16 @@ def _fix_db_url(url: str) -> str:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global engine, session_factory, redis_client, scheduler
 
-    database_url = _fix_db_url(os.environ["DATABASE_URL"])
+    # FIX #3: Provide clearer error if DATABASE_URL is missing
+    db_url_raw = os.environ.get("DATABASE_URL")
+    if not db_url_raw:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is not set. "
+            "Add it to .replit [userenv.shared] or your server environment. "
+            "Get it from Supabase → Project Settings → Database → Connection string (URI)."
+        )
+
+    database_url = _fix_db_url(db_url_raw)
     engine = create_async_engine(database_url, pool_size=10, max_overflow=20, echo=False)
     session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     app.state.db = session_factory
@@ -79,6 +88,7 @@ def _register_jobs(scheduler: AsyncIOScheduler) -> None:
 
 
 def create_app() -> FastAPI:
+    # FIX #5: Build CORS origins list including ayzen.tech
     cors_origins: list[str] = []
     for val in [
         os.environ.get("CORS_ORIGINS", ""),
@@ -92,7 +102,15 @@ def create_app() -> FastAPI:
                 if not part.startswith("http"):
                     cors_origins.append(f"http://{part}")
 
-    cors_origins += ["http://localhost:5173", "http://localhost:3000", "http://localhost:80", "http://localhost"]
+    # FIX #5: Always include production domain and localhost variants
+    cors_origins += [
+        "https://ayzen.tech",
+        "https://www.ayzen.tech",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:80",
+        "http://localhost",
+    ]
     cors_origins = list(set(filter(None, cors_origins)))
 
     app = FastAPI(
@@ -106,7 +124,8 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
-        allow_origin_regex=r"https://.*\.(replit\.dev|replit\.app|repl\.co)",
+        # FIX #5: Updated regex to also match ayzen.tech subdomains
+        allow_origin_regex=r"https://.*\.(replit\.dev|replit\.app|repl\.co|ayzen\.tech)",
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization", "X-CSRF-Token", "X-Internal-Webhook-Token"],
@@ -145,6 +164,11 @@ def create_app() -> FastAPI:
 
     @app.get("/api/v1/health", tags=["health"])
     async def health_check() -> dict:
+        return {"status": "ok", "version": "5.0.0"}
+
+    # FIX #7: Also register /healthz alias to match OpenAPI spec and generated client
+    @app.get("/api/v1/healthz", tags=["health"])
+    async def health_check_alias() -> dict:
         return {"status": "ok", "version": "5.0.0"}
 
     return app
