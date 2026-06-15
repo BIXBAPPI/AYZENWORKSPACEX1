@@ -1,5 +1,5 @@
 import { useParams } from "wouter";
-import { useGetProject, getGetProjectQueryKey, useGetProjectStats, getGetProjectStatsQueryKey, useListTasks, getListTasksQueryKey, useCreateTask, useUpdateTask } from "@workspace/api-client-react";
+import { useGetProject, getGetProjectQueryKey, useGetProjectStats, getGetProjectStatsQueryKey, useListTasks, getListTasksQueryKey, useCreateTask, useUpdateTask, TaskUpdateStatus, TaskInputPriority } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,10 +71,8 @@ export default function ProjectDetailPage() {
   return (
     <div className="p-6 max-w-[1400px]">
       <div className="mb-4">
-        <Link href="/projects">
-          <a className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
-            <ChevronLeft className="w-3.5 h-3.5" /> Projects
-          </a>
+        <Link href="/projects" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
+          <ChevronLeft className="w-3.5 h-3.5" /> Projects
         </Link>
         <div className="flex items-center justify-between">
           <div>
@@ -133,7 +131,7 @@ export default function ProjectDetailPage() {
             <div className="divide-y divide-border">
               {tasks.map((t: any) => (
                 <div key={t.id} className="flex items-center gap-3 py-2.5">
-                  <Select value={t.status} onValueChange={(val) => updateTask({ taskId: t.id, data: { status: val } })}>
+                  <Select value={t.status} onValueChange={(val) => updateTask({ taskId: t.id, data: { status: val as TaskUpdateStatus } })}>
                     <SelectTrigger className={cn("w-28 h-6 text-[11px] border-0 px-2", STATUS_COLORS[t.status])}>
                       <SelectValue />
                     </SelectTrigger>
@@ -193,7 +191,7 @@ export default function ProjectDetailPage() {
             <Button
               className="font-bold"
               disabled={!newTitle.trim() || creating}
-              onClick={() => createTask({ data: { title: newTitle.trim(), project_id: projectId, priority: newPriority } })}
+              onClick={() => createTask({ data: { title: newTitle.trim(), project_id: projectId, priority: newPriority as TaskInputPriority } })}
             >
               {creating ? "Adding..." : "Add Task"}
             </Button>

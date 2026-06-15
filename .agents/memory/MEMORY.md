@@ -1,0 +1,4 @@
+- [Proxy routing pattern](proxy-routing.md) — Node.js must use pathFilter, not app.use prefix mounting, to preserve /api/v1 when forwarding to Python FastAPI
+- [Zod version split](zod-version-split.md) — server code uses zod/v4; dashboard forms use "zod" (v3 compat) for @hookform/resolvers compatibility
+- [Auth cookie config](auth-cookie.md) — samesite=none + secure=true required for HttpOnly JWT cookies in proxied iframe preview
+- [Enum type casts](enum-type-casts.md) — Select onValueChange returns string; must cast to MemberUpdateRole/TaskUpdateStatus/TaskInputPriority from @workspace/api-client-react

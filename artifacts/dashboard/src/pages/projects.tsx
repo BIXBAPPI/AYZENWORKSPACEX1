@@ -106,12 +106,10 @@ export default function ProjectsPage() {
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
-                    <Link href={`/projects/${p.id}`}>
-                      <a className="flex items-center">
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </a>
+                    <Link href={`/projects/${p.id}`} className="flex items-center">
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
                     </Link>
                   </div>
                 </div>

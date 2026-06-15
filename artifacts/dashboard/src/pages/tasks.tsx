@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListTasks, getListTasksQueryKey, useCreateTask, useUpdateTask, useDeleteTask, useListOverdueTasks, getListOverdueTasksQueryKey, useListProjects, getListProjectsQueryKey } from "@workspace/api-client-react";
+import { useListTasks, getListTasksQueryKey, useCreateTask, useUpdateTask, useDeleteTask, useListOverdueTasks, getListOverdueTasksQueryKey, useListProjects, getListProjectsQueryKey, TaskUpdateStatus, TaskInputPriority } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,7 +159,7 @@ export default function TasksPage() {
                   )}
                   <Select
                     value={t.status}
-                    onValueChange={(val) => updateTask({ taskId: t.id, data: { status: val } })}
+                    onValueChange={(val) => updateTask({ taskId: t.id, data: { status: val as TaskUpdateStatus } })}
                   >
                     <SelectTrigger className={cn("w-28 h-6 text-[11px] border shrink-0", STATUS_COLORS[t.status])}>
                       <SelectValue />
@@ -248,7 +248,7 @@ export default function TasksPage() {
             <Button
               className="font-bold"
               disabled={!newTitle.trim() || creating}
-              onClick={() => createTask({ data: { title: newTitle.trim(), priority: newPriority, project_id: newProjectId || undefined } })}
+              onClick={() => createTask({ data: { title: newTitle.trim(), priority: newPriority as TaskInputPriority, project_id: newProjectId || undefined } })}
             >
               {creating ? "Creating..." : "Create"}
             </Button>

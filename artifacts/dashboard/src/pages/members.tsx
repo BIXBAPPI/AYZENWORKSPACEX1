@@ -1,4 +1,4 @@
-import { useListMembers, getListMembersQueryKey, useGetMemberLeaderboard, getGetMemberLeaderboardQueryKey, useUpdateMember } from "@workspace/api-client-react";
+import { useListMembers, getListMembersQueryKey, useGetMemberLeaderboard, getGetMemberLeaderboardQueryKey, useUpdateMember, MemberUpdateRole } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,7 +101,7 @@ export default function MembersPage() {
                         {m.role !== "owner" && (
                           <Select
                             value={m.role}
-                            onValueChange={(role) => updateMember({ userId: m.id, data: { role } })}
+                            onValueChange={(role) => updateMember({ userId: m.id, data: { role: role as MemberUpdateRole } })}
                           >
                             <SelectTrigger className="w-24 h-6 text-[11px]">
                               <SelectValue />

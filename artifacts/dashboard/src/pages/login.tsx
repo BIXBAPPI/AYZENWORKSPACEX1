@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod/v4";
+import { z } from "zod";
 import { useLogin } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,7 +11,7 @@ import { Link } from "wouter";
 import { Zap } from "lucide-react";
 
 const schema = z.object({
-  email: z.email("Valid email required"),
+  email: z.string().email("Valid email required"),
   password: z.string().min(1, "Password required"),
 });
 
@@ -122,8 +122,8 @@ export default function Login() {
 
           <p className="text-center text-xs text-muted-foreground mt-6">
             No account?{" "}
-            <Link href="/register">
-              <a className="text-primary font-medium hover:underline">Create one</a>
+            <Link href="/register" className="text-primary font-medium hover:underline">
+              Create one
             </Link>
           </p>
         </div>

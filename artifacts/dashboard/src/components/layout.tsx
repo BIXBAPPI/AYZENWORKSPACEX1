@@ -59,18 +59,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = location === href || (href !== "/dashboard" && location.startsWith(href));
             return (
-              <Link key={href} href={href}>
-                <a
-                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-sm mb-0.5 transition-colors",
-                    active
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                  )}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {label}
-                </a>
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-sm mb-0.5 transition-colors",
+                  active
+                    ? "bg-sidebar-accent text-sidebar-primary"
+                    : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                )}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
               </Link>
             );
           })}
@@ -94,7 +94,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             variant="ghost"
             size="sm"
             className="w-full justify-start h-7 px-2 text-xs text-sidebar-foreground/60 hover:text-destructive hover:bg-destructive/10"
-            onClick={() => logout({ data: {} })}
+            onClick={() => logout()}
           >
             <LogOut className="w-3.5 h-3.5 mr-1.5" />
             Sign out
