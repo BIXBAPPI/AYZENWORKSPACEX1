@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "python-3.11", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -11,6 +11,27 @@ env = { "CI" = "true" }
 [workflows]
 runButton = "Project"
 
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Python API"
+
+[[workflows.workflow]]
+name = "Python API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PYTHONPATH=/home/runner/workspace python3 -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload"
+waitForPort = 8000
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [agent]
 stack = "PNPM_WORKSPACE"
 expertMode = true
@@ -20,9 +41,35 @@ path = "scripts/post-merge.sh"
 timeoutMs = 20000
 
 [[ports]]
+localPort = 8000
+externalPort = 8000
+
+[[ports]]
 localPort = 8080
 externalPort = 8080
 
 [[ports]]
 localPort = 8081
 externalPort = 80
+
+[[ports]]
+localPort = 23183
+externalPort = 3001
+
+[userenv]
+
+[userenv.shared]
+INTERNAL_WEBHOOK_TOKEN = "516a682164f567910ac4940dfa331be4aaba8f57081494922ef22b2046b41701"
+TELEGRAM_WEBHOOK_SECRET = "6b309cc2227a0c8853f7702bda5c91e77475a7b9709d7ebab0dfd35d491d239c"
+CORS_ORIGINS = "https://${REPLIT_DEV_DOMAIN},https://${REPLIT_DOMAINS}"
+ALLOWED_HOSTS = "*"
+STATELESS_MODE = "false"
+ENVIRONMENT = "development"
+BOT_USERNAME = "AyzenBot"
+DEFAULT_QUIET_START = "23:00"
+DEFAULT_QUIET_END = "07:00"
+REDIS_URL = "redis://localhost:6379/0"
+
+[nix]
+channel = "stable-25_05"
+packages = ["cargo", "libiconv", "libxcrypt", "postgresql", "rustc"]

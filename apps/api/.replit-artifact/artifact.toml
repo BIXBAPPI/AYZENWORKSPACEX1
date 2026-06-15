@@ -1,0 +1,16 @@
+kind = "api"
+previewPath = "/api/v1"
+title = "AYZEN Python API"
+version = "1.0.0"
+id = "apps/api"
+
+[[services]]
+localPort = 8000
+name = "Python API"
+paths = ["/api/v1"]
+
+[services.development]
+run = "PYTHONPATH=/home/runner/workspace python3 -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload"
+
+[services.env]
+PORT = "8000"

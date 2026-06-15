@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import { createProxyMiddleware } from "http-proxy-middleware";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -25,9 +26,27 @@ app.use(
     },
   }),
 );
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  createProxyMiddleware({
+    target: "http://localhost:8000",
+    changeOrigin: false,
+    pathFilter: "/api/v1",
+    on: {
+      error(err, _req, res) {
+        logger.error({ err }, "Python API proxy error");
+        if (typeof (res as express.Response).status === "function") {
+          (res as express.Response)
+            .status(502)
+            .json({ error: "python_api_unavailable" });
+        }
+      },
+    },
+  }),
+);
 
 app.use("/api", router);
 

@@ -2,21 +2,39 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 5.0.0
+  description: AYZEN crypto/community task-management platform API
 servers:
-  - url: /api
-    description: Base API path
+  - url: /api/v1
+    description: AYZEN API v1
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: analytics
+    description: Analytics and dashboard
+  - name: projects
+    description: Projects
+  - name: tasks
+    description: Tasks
+  - name: members
+    description: Members
+  - name: progress
+    description: Progress logs
+  - name: broadcasts
+    description: Broadcast messages
+  - name: notifications
+    description: Notifications
+  - name: settings
+    description: User settings
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +42,963 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      summary: Login with email and password
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+        "401":
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      operationId: authRegister
+      summary: Register new account
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Log out
+      tags: [auth]
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      summary: Get current user
+      tags: [auth]
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Not authenticated
+
+  /analytics/dashboard:
+    get:
+      operationId: getDashboardSummary
+      summary: Dashboard summary – totals, top members, recent activity
+      tags: [analytics]
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /analytics/snapshots:
+    get:
+      operationId: listAnalyticsSnapshots
+      summary: Daily analytics snapshots
+      tags: [analytics]
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Snapshots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalyticsSnapshot"
+
+  /projects:
+    get:
+      operationId: listProjects
+      summary: List projects
+      tags: [projects]
+      responses:
+        "200":
+          description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      summary: Create project
+      tags: [projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{projectId}:
+    get:
+      operationId: getProject
+      summary: Get project
+      tags: [projects]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    patch:
+      operationId: updateProject
+      summary: Update project
+      tags: [projects]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      summary: Delete project
+      tags: [projects]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /projects/{projectId}/stats:
+    get:
+      operationId: getProjectStats
+      summary: Project task stats
+      tags: [projects]
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectStats"
+
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: List tasks
+      tags: [tasks]
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: assignee_id
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: priority
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      summary: Create task
+      tags: [tasks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{taskId}:
+    get:
+      operationId: getTask
+      summary: Get task
+      tags: [tasks]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    patch:
+      operationId: updateTask
+      summary: Update task
+      tags: [tasks]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      summary: Delete task
+      tags: [tasks]
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /tasks/overdue:
+    get:
+      operationId: listOverdueTasks
+      summary: List overdue tasks
+      tags: [tasks]
+      responses:
+        "200":
+          description: Overdue tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+
+  /members:
+    get:
+      operationId: listMembers
+      summary: List members
+      tags: [members]
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Member"
+
+  /members/leaderboard:
+    get:
+      operationId: getMemberLeaderboard
+      summary: Top members by task completions
+      tags: [members]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  /members/{userId}:
+    get:
+      operationId: getMember
+      summary: Get member
+      tags: [members]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+    patch:
+      operationId: updateMember
+      summary: Update member role
+      tags: [members]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemberUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+
+  /progress:
+    get:
+      operationId: listProgressLogs
+      summary: List progress logs
+      tags: [progress]
+      parameters:
+        - name: task_id
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: user_id
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Progress logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProgressLog"
+    post:
+      operationId: logProgress
+      summary: Log progress
+      tags: [progress]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressLog"
+
+  /broadcasts:
+    get:
+      operationId: listBroadcasts
+      summary: List broadcasts
+      tags: [broadcasts]
+      responses:
+        "200":
+          description: Broadcasts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Broadcast"
+    post:
+      operationId: createBroadcast
+      summary: Send broadcast
+      tags: [broadcasts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BroadcastInput"
+      responses:
+        "201":
+          description: Queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Broadcast"
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      summary: List notifications
+      tags: [notifications]
+      parameters:
+        - name: unread_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{notificationId}/read:
+    patch:
+      operationId: markNotificationRead
+      summary: Mark notification read
+      tags: [notifications]
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /settings:
+    get:
+      operationId: getSettings
+      summary: Get user settings
+      tags: [settings]
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+    patch:
+      operationId: updateSettings
+      summary: Update settings
+      tags: [settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSettingsUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
+        version:
+          type: string
 
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RegisterInput:
+      type: object
+      required: [email, password, full_name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        full_name:
+          type: string
+
+    AuthResult:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        role:
+          type: string
+
+    UserProfile:
+      type: object
+      required: [user_id, email, role, tenant_id]
+      properties:
+        user_id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        tenant_id:
+          type: string
+        full_name:
+          type: ["string", "null"]
+        onboarding_completed:
+          type: boolean
+
+    DashboardSummary:
+      type: object
+      required: [total_tasks, completed_tasks, active_projects, active_members]
+      properties:
+        total_tasks:
+          type: integer
+        completed_tasks:
+          type: integer
+        active_projects:
+          type: integer
+        active_members:
+          type: integer
+        overdue_tasks:
+          type: integer
+        completion_rate:
+          type: number
+        top_members:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        recent_completions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgressLog"
+
+    AnalyticsSnapshot:
+      type: object
+      required: [id, snapshot_date, total_tasks, completed_tasks]
+      properties:
+        id:
+          type: string
+        snapshot_date:
+          type: string
+          format: date
+        total_tasks:
+          type: integer
+        completed_tasks:
+          type: integer
+        active_members:
+          type: integer
+        new_tasks:
+          type: integer
+
+    Project:
+      type: object
+      required: [id, name, created_at]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        created_by:
+          type: ["string", "null"]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        task_count:
+          type: integer
+        completed_count:
+          type: integer
+
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+
+    ProjectStats:
+      type: object
+      required: [project_id, total, completed, in_progress, pending, overdue]
+      properties:
+        project_id:
+          type: string
+        total:
+          type: integer
+        completed:
+          type: integer
+        in_progress:
+          type: integer
+        pending:
+          type: integer
+        overdue:
+          type: integer
+        completion_rate:
+          type: number
+
+    Task:
+      type: object
+      required: [id, title, status, priority, created_at]
+      properties:
+        id:
+          type: string
+        project_id:
+          type: ["string", "null"]
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        assignee_id:
+          type: ["string", "null"]
+        assignee_name:
+          type: ["string", "null"]
+        project_name:
+          type: ["string", "null"]
+        deadline:
+          type: ["string", "null"]
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        project_id:
+          type: ["string", "null"]
+        assignee_id:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+        deadline:
+          type: ["string", "null"]
+          format: date-time
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        assignee_id:
+          type: ["string", "null"]
+        deadline:
+          type: ["string", "null"]
+          format: date-time
+
+    Member:
+      type: object
+      required: [id, email, role, created_at]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        full_name:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [owner, manager, member]
+        telegram_user_id:
+          type: ["integer", "null"]
+        onboarding_completed:
+          type: boolean
+        tasks_assigned:
+          type: integer
+        tasks_completed:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    MemberUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [manager, member]
+
+    LeaderboardEntry:
+      type: object
+      required: [user_id, completed_count, rank]
+      properties:
+        user_id:
+          type: string
+        full_name:
+          type: ["string", "null"]
+        email:
+          type: string
+        completed_count:
+          type: integer
+        rank:
+          type: integer
+
+    ProgressLog:
+      type: object
+      required: [id, task_id, user_id, created_at]
+      properties:
+        id:
+          type: string
+        task_id:
+          type: string
+        task_title:
+          type: ["string", "null"]
+        user_id:
+          type: string
+        user_name:
+          type: ["string", "null"]
+        note:
+          type: ["string", "null"]
+        percent_complete:
+          type: ["integer", "null"]
+        created_at:
+          type: string
+          format: date-time
+
+    ProgressInput:
+      type: object
+      required: [task_id]
+      properties:
+        task_id:
+          type: string
+        note:
+          type: string
+        percent_complete:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    Broadcast:
+      type: object
+      required: [id, message, created_at]
+      properties:
+        id:
+          type: string
+        message:
+          type: string
+        sent_count:
+          type: integer
+        failed_count:
+          type: integer
+        created_by:
+          type: ["string", "null"]
+        created_at:
+          type: string
+          format: date-time
+
+    BroadcastInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+        target_role:
+          type: ["string", "null"]
+
+    Notification:
+      type: object
+      required: [id, type, message, read, created_at]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        task_id:
+          type: ["string", "null"]
+        created_at:
+          type: string
+          format: date-time
+
+    UserSettings:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: string
+        language:
+          type: string
+          default: en
+        quiet_start:
+          type: ["string", "null"]
+        quiet_end:
+          type: ["string", "null"]
+        notify_deadline:
+          type: boolean
+          default: true
+        notify_assignments:
+          type: boolean
+          default: true
+
+    UserSettingsUpdate:
+      type: object
+      properties:
+        language:
+          type: string
+        quiet_start:
+          type: ["string", "null"]
+        quiet_end:
+          type: ["string", "null"]
+        notify_deadline:
+          type: boolean
+        notify_assignments:
+          type: boolean
