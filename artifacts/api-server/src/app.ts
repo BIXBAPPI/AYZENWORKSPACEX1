@@ -9,6 +9,14 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// ─── HEALTHCHECK — must respond 200 immediately, before any middleware ────────
+app.get("/api", (_req, res) => {
+  res.status(200).json({ status: "ok", service: "ayzen-workspace" });
+});
+app.get("/api/healthz", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 app.use(
   pinoHttp({
     logger,
