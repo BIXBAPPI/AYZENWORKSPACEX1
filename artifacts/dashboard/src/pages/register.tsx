@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,6 +22,7 @@ type FormData = z.infer<typeof schema>;
 export default function Register() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -30,13 +32,13 @@ export default function Register() {
   const { mutate, isPending, error } = useAuthRegister({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries();
-        setLocation("/dashboard");
+        setLocation('/verify-email?email=' + encodeURIComponent(submittedEmail));
       },
     },
   });
 
   function onSubmit(values: FormData) {
+    setSubmittedEmail(values.email);
     mutate({ data: values });
   }
 

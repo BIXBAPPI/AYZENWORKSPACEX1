@@ -6,6 +6,7 @@ import { AuthProvider, AuthGuard } from "@/lib/auth";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import VerifyEmail from "@/pages/verify-email";
 import DashboardPage from "@/pages/dashboard";
 import ProjectsPage from "@/pages/projects";
 import ProjectDetailPage from "@/pages/project-detail";
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/" component={() => <Redirect to="/dashboard" />} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={DashboardPage} />} />
       <Route path="/projects" component={() => <ProtectedRoute component={ProjectsPage} />} />
       <Route path="/projects/:id" component={() => <ProtectedRoute component={ProjectDetailPage} />} />

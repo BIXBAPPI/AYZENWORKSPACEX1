@@ -20,6 +20,10 @@ author = "agent"
 task = "workflow.run"
 args = "AYZEN Dashboard"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Node API Server"
+
 [[workflows.workflow]]
 name = "AYZEN Dashboard"
 author = "agent"
@@ -31,6 +35,18 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "Node API Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=8080 node --enable-source-maps /home/runner/workspace/artifacts/api-server/dist/index.mjs"
+waitForPort = 8080
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
@@ -50,10 +66,7 @@ externalPort = 8000
 
 [[ports]]
 localPort = 8080
-
-[[ports]]
-localPort = 8081
-externalPort = 80
+externalPort = 8080
 
 [[ports]]
 localPort = 23183
@@ -72,7 +85,6 @@ BOT_USERNAME = "AyzenBot"
 DEFAULT_QUIET_START = "23:00"
 DEFAULT_QUIET_END = "07:00"
 REDIS_URL = "redis://localhost:6379/0"
-PORT = "8080"
 
 [nix]
 channel = "stable-25_05"

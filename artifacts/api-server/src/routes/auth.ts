@@ -22,5 +22,6 @@ router.post("/login", proxyAuth);
 router.post("/register", proxyAuth);
 router.post("/logout", proxyAuth);
 router.get("/me", proxyAuth);
+router.post("/verify-email", proxyAuth);
 
 export default router;
