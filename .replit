@@ -3,6 +3,8 @@ modules = ["nodejs-24", "python-3.11", "postgresql-16"]
 [deployment]
 router = "application"
 deploymentTarget = "autoscale"
+run = ["bash", "-c", "PYTHONPATH=/home/runner/workspace python3 -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 & NODE_ENV=production node --enable-source-maps artifacts/api-server/dist/index.mjs"]
+build = ["bash", "-c", "python3 -m pip install --target .pythonlibs -r apps/api/requirements.txt && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/dashboard run build && pnpm --filter @workspace/api-server run build"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
@@ -84,11 +86,16 @@ TELEGRAM_WEBHOOK_SECRET = "6b309cc2227a0c8853f7702bda5c91e77475a7b9709d7ebab0dfd
 CORS_ORIGINS = "https://${REPLIT_DEV_DOMAIN},https://${REPLIT_DOMAINS}"
 ALLOWED_HOSTS = "*"
 STATELESS_MODE = "false"
-ENVIRONMENT = "development"
 BOT_USERNAME = "AyzenBot"
 DEFAULT_QUIET_START = "23:00"
 DEFAULT_QUIET_END = "07:00"
 REDIS_URL = "redis://localhost:6379/0"
+
+[userenv.development]
+ENVIRONMENT = "development"
+
+[userenv.production]
+ENVIRONMENT = "production"
 
 [nix]
 channel = "stable-25_05"
