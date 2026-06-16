@@ -56,14 +56,15 @@ class TelegramClient:
         chat_id: int | str,
         text: str,
         reply_markup: dict | None = None,
-        parse_mode: str = "MarkdownV2",
+        parse_mode: str | None = "MarkdownV2",
         **kwargs: Any,
     ) -> dict:
         payload: dict[str, Any] = {
             "chat_id": chat_id,
             "text": text,
-            "parse_mode": parse_mode,
         }
+        if parse_mode:
+            payload["parse_mode"] = parse_mode
         if reply_markup:
             payload["reply_markup"] = reply_markup
         payload.update(kwargs)

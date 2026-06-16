@@ -1,7 +1,7 @@
 {
-  "welcome.first_time": "🎉 AYZEN এ স্বাগতম, {name}!\n\nতোমাকে register করতে হবে আমাদের site এ:\n🔗 ayzen.tech/register\n\nতারপর এখানে পাঠাও: /link {code}",
+  "welcome.first_time": "🎉 AYZEN এ স্বাগতম, {name}!\n\nayzen.tech-এ register করো, তারপর dashboard-এর Settings থেকে link code নাও।\n\nতারপর পাঠাও: /link YOUR_CODE",
   "welcome.returning": "👋 আবার স্বাগতম, {name}!\n\n📌 Active Project: {project_name}",
-  "welcome.not_linked": "⚠️ তোমার account এখনো link হয়নি।\n\nপ্রথমে register করো:\n🔗 ayzen.tech/register\n\nতারপর এখানে পাঠাও: /link {code}",
+  "welcome.not_linked": "⚠️ তোমার account এখনো link হয়নি।\n\nayzen.tech-এ register করো, তারপর dashboard-এর Settings থেকে link code নাও।\n\nতারপর পাঠাও: /link YOUR_CODE",
   "welcome.link_success": "✅ তোমার account সফলভাবে link হয়েছে!\n\nProject select করতে /menu তে যাও।",
   "welcome.already_linked": "⚠️ এই Telegram account ইতোমধ্যে link করা আছে।",
   "welcome.link_invalid": "❌ Invalid বা expired link code। নতুন code এর জন্য ayzen.tech/settings এ যাও।",

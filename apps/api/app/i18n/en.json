@@ -1,7 +1,7 @@
 {
-  "welcome.first_time": "🎉 Welcome to AYZEN, {name}!\n\nYou need to register on our site:\n🔗 ayzen.tech/register\n\nThen send here: /link {code}",
+  "welcome.first_time": "🎉 Welcome to AYZEN, {name}!\n\nRegister at ayzen.tech then go to Settings to get your link code.\n\nThen send: /link YOUR_CODE",
   "welcome.returning": "👋 Welcome back, {name}!\n\n📌 Active Project: {project_name}",
-  "welcome.not_linked": "⚠️ Your account is not linked yet.\n\nFirst register:\n🔗 ayzen.tech/register\n\nThen send here: /link {code}",
+  "welcome.not_linked": "⚠️ Your account is not linked yet.\n\nRegister at ayzen.tech then open Settings in the dashboard to get your link code.\n\nThen send: /link YOUR_CODE",
   "welcome.link_success": "✅ Your account has been successfully linked!\n\nGo to /menu to select a project.",
   "welcome.already_linked": "⚠️ This Telegram account is already linked.",
   "welcome.link_invalid": "❌ Invalid or expired link code. Go to ayzen.tech/settings for a new code.",

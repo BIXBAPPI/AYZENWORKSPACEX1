@@ -2,4 +2,5 @@
 - [Zod version split](zod-version-split.md) — server code uses zod/v4; dashboard forms use "zod" (v3 compat) for @hookform/resolvers compatibility
 - [Auth cookie config](auth-cookie.md) — samesite=none + secure=true required for HttpOnly JWT cookies in proxied iframe preview
 - [Enum type casts](enum-type-casts.md) — Select onValueChange returns string; must cast to MemberUpdateRole/TaskUpdateStatus/TaskInputPriority from @workspace/api-client-react
-- [Artifact workflow port detection](artifact-workflow-port.md) — artifact-managed workflows silently fail port detection even when server starts; use a separate console workflow as workaround
+- [pgbouncer asyncpg fix](pgbouncer-asyncpg.md) — Supabase pgbouncer transaction mode requires NullPool + prepared_statement_name_func=uuid4 + statement_cache_size=0 in create_async_engine
+- [Telegram bot fixes](telegram-bot-fixes.md) — three bugs fixed: wrong webhook secret header, app missing from ctx, raw SQL without text() in bot services

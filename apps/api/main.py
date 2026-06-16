@@ -4,6 +4,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+from uuid import uuid4
 
 import redis.asyncio as aioredis
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -11,6 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
 logger = logging.getLogger("ayzen")
@@ -43,7 +45,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         )
 
     database_url = _fix_db_url(db_url_raw)
-    engine = create_async_engine(database_url, pool_size=10, max_overflow=20, echo=False)
+    engine = create_async_engine(
+        database_url,
+        poolclass=NullPool,
+        echo=False,
+        connect_args={
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
+        },
+    )
     session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     app.state.db = session_factory
     logger.info("Database connected")

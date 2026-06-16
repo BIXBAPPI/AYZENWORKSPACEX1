@@ -35,9 +35,9 @@ async def start_handler(update: dict, ctx: dict) -> None:
     user = await user_svc.get_user_by_telegram_id(telegram_user_id)
 
     if not user:
-        # Not linked — show registration prompt
-        msg = t("welcome.not_linked", locale, name=escape_md(first_name))
-        await client.send_message(chat_id, msg)
+        # Not linked — show registration prompt (plain text, no MarkdownV2)
+        msg = t("welcome.not_linked", locale)
+        await client.send_message(chat_id, msg, parse_mode=None)
         return
 
     # User is linked — show welcome back + set active state
@@ -45,8 +45,8 @@ async def start_handler(update: dict, ctx: dict) -> None:
     bot_ctx = await ctx_svc.resolve(telegram_user_id)
 
     if not bot_ctx:
-        msg = t("welcome.not_linked", locale, name=escape_md(first_name))
-        await client.send_message(chat_id, msg)
+        msg = t("welcome.not_linked", locale)
+        await client.send_message(chat_id, msg, parse_mode=None)
         return
 
     state_svc = BotStateService(redis, db)

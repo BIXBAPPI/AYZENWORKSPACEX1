@@ -45,14 +45,14 @@ class BotRouter:
         self._state_handlers[state] = handler
 
     # XN04  Handler Router Registration
-    async def dispatch(self, update: dict) -> None:
+    async def dispatch(self, update: dict, app: Any = None) -> None:
         """Main dispatch method. Defensive — never raises."""
         try:
-            await self._dispatch_inner(update)
+            await self._dispatch_inner(update, app=app)
         except Exception as exc:
             logger.exception("Unhandled error dispatching update: %s", exc)
 
-    async def _dispatch_inner(self, update: dict) -> None:
+    async def _dispatch_inner(self, update: dict, app: Any = None) -> None:
         # Extract common fields defensively
         message = update.get("message") or update.get("edited_message")
         callback_query = update.get("callback_query")
@@ -87,6 +87,7 @@ class BotRouter:
             "chat_id": chat_id,
             "telegram_user_id": telegram_user_id,
             "client": self._client,
+            "app": app,
         }
 
         # Load bot state for locale (needed for error messages)
