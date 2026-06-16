@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import logging
 
+from sqlalchemy import text
+
 logger = logging.getLogger("ayzen.jobs.quiet_queue")
 
 
@@ -31,7 +33,7 @@ async def run() -> None:
         # Find users with queued notifications that are no longer in quiet hours
         async with session_factory() as session:
             result = await session.execute(
-                """
+                text("""
                 SELECT u.telegram_user_id
                 FROM users u
                 JOIN user_settings us ON us.user_id = u.id
@@ -40,7 +42,7 @@ async def run() -> None:
                     OR NOT (
                       CURRENT_TIME BETWEEN us.quiet_hours_start AND us.quiet_hours_end
                     ))
-                """,
+                """),
             )
             users = result.fetchall()
 

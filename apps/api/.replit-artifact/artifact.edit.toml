@@ -1,0 +1,13 @@
+kind = "api"
+previewPath = "/api/v1"
+title = "AYZEN Python API"
+version = "1.0.0"
+id = "apps/api"
+
+[[services]]
+localPort = 8000
+name = "Python API"
+paths = ["/api/v1"]
+
+[services.env]
+PORT = "8000"

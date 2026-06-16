@@ -6,6 +6,8 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import text
+
 logger = logging.getLogger("ayzen.jobs.deadline_reminder")
 
 
@@ -37,7 +39,7 @@ async def run() -> None:
     try:
         async with session_factory() as session:
             result = await session.execute(
-                """
+                text("""
                 SELECT
                     t.id as task_id, t.title, t.deadline, t.project_id, t.tenant_id,
                     p.name as project_name,
@@ -57,7 +59,7 @@ async def run() -> None:
                     JOIN account_slots asl ON asl.id = tc.account_slot_id
                     WHERE tc.task_id = t.id AND asl.user_id = u.id
                   )
-                """,
+                """),
                 {"now": now, "window": deadline_window},
             )
             rows = result.fetchall()
@@ -85,7 +87,7 @@ async def run() -> None:
             async with session_factory() as session:
                 for task_id in notified_task_ids:
                     await session.execute(
-                        "UPDATE tasks SET notify_sent = true WHERE id = :tid",
+                        text("UPDATE tasks SET notify_sent = true WHERE id = :tid"),
                         {"tid": task_id},
                     )
                 await session.commit()

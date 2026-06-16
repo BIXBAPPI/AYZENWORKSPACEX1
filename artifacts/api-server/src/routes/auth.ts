@@ -1,21 +1,26 @@
 import { Router } from "express";
+import type { Request, Response } from "express";
 
 const router = Router();
-const PYTHON_API = "http://localhost:8000/api/v1";
+const PYTHON = "http://localhost:8000/api/v1";
 
-router.use(async (req, res) => {
+async function proxyAuth(req: Request, res: Response): Promise<void> {
   try {
-    const url = `${PYTHON_API}/auth${req.path}`;
-    const response = await fetch(url, {
+    const r = await fetch(`${PYTHON}/auth${req.path}`, {
       method: req.method,
       headers: { "Content-Type": "application/json" },
-      body: ["GET","HEAD"].includes(req.method) ? undefined : JSON.stringify(req.body),
+      body: ["GET", "HEAD"].includes(req.method) ? undefined : JSON.stringify(req.body),
     });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (e) {
+    const data = await r.json();
+    res.status(r.status).json(data);
+  } catch {
     res.status(502).json({ error: "python_api_unavailable" });
   }
-});
+}
+
+router.post("/login", proxyAuth);
+router.post("/register", proxyAuth);
+router.post("/logout", proxyAuth);
+router.get("/me", proxyAuth);
 
 export default router;
