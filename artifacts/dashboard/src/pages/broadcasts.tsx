@@ -30,14 +30,15 @@ export default function BroadcastsPage() {
   });
 
   return (
-    <div className="p-6 max-w-[1400px]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-6 max-w-[1400px]">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Broadcasts</h1>
+          <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Broadcasts</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Telegram messages sent to your community</p>
         </div>
         <Button size="sm" className="font-bold" onClick={() => setShowCompose(true)}>
-          <Plus className="w-4 h-4 mr-1.5" /> Compose
+          <Plus className="w-4 h-4 md:mr-1.5" />
+          <span className="hidden md:inline">Compose</span>
         </Button>
       </div>
 

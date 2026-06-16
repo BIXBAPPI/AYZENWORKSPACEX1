@@ -55,13 +55,13 @@ export default function DashboardPage() {
   const completionRate = summary?.completion_rate ?? 0;
 
   return (
-    <div className="p-6 max-w-[1400px]">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-foreground tracking-tight">Dashboard</h1>
+    <div className="p-4 md:p-6 max-w-[1400px]">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Operations overview</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <KpiCard title="Total Tasks" value={summary?.total_tasks ?? 0} icon={CheckSquare} trend={`${completionRate}% completion rate`} />
         <KpiCard title="Completed" value={summary?.completed_tasks ?? 0} icon={TrendingUp} color="bg-secondary/20" />
         <KpiCard title="Overdue" value={summary?.overdue_tasks ?? 0} icon={AlertTriangle} color="bg-destructive/10" />

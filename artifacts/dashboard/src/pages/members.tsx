@@ -41,9 +41,9 @@ export default function MembersPage() {
   );
 
   return (
-    <div className="p-6 max-w-[1400px]">
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-foreground tracking-tight">Members</h1>
+    <div className="p-4 md:p-6 max-w-[1400px]">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Members</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{members?.length ?? 0} total members</p>
       </div>
 

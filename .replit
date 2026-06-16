@@ -4,7 +4,7 @@ modules = ["nodejs-20", "python-3.12", "web", "postgresql-16"]
 router = "application"
 deploymentTarget = "vm"
 run = ["bash", "-c", "PYTHONPATH=/home/runner/workspace .venv/bin/python -m uvicorn apps.api.main:app --host 127.0.0.1 --port 8000 & PORT=8080 NODE_ENV=production node --enable-source-maps artifacts/api-server/dist/index.mjs"]
-build = ["bash", "-c", "UV_SYSTEM_PYTHON=0 UV_PROJECT_ENVIRONMENT=.venv uv sync --no-dev && pnpm install --frozen-lockfile && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/dashboard run build && pnpm --filter @workspace/api-server run build"]
+build = ["bash", "-c", "bash scripts/build.sh"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]

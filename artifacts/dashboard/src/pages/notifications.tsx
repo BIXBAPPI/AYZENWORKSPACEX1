@@ -24,10 +24,10 @@ export default function NotificationsPage() {
   const unread = (notifications ?? []).filter((n: any) => !n.read).length;
 
   return (
-    <div className="p-6 max-w-[900px]">
-      <div className="mb-6">
+    <div className="p-4 md:p-6 max-w-[900px]">
+      <div className="mb-4 md:mb-6">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Notifications</h1>
+          <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Notifications</h1>
           {unread > 0 && (
             <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-sm">{unread}</span>
           )}

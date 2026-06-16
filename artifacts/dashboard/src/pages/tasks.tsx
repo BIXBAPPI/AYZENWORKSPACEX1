@@ -81,10 +81,10 @@ export default function TasksPage() {
   const overdueCount = overdue?.length ?? 0;
 
   return (
-    <div className="p-6 max-w-[1400px]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-6 max-w-[1400px]">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Tasks</h1>
+          <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Tasks</h1>
           <div className="flex items-center gap-2 mt-0.5">
             <p className="text-sm text-muted-foreground">{filtered.length} tasks</p>
             {overdueCount > 0 && (
@@ -99,39 +99,42 @@ export default function TasksPage() {
           </div>
         </div>
         <Button size="sm" className="font-bold" onClick={() => setShowCreate(true)}>
-          <Plus className="w-4 h-4 mr-1.5" /> New Task
+          <Plus className="w-4 h-4 md:mr-1.5" />
+          <span className="hidden md:inline">New Task</span>
         </Button>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search tasks..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-32">
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Priority</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="normal">Normal</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue placeholder="Priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priority</SelectItem>
+              <SelectItem value="urgent">Urgent</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="normal">Normal</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Card className="border-border">
@@ -143,42 +146,46 @@ export default function TasksPage() {
           ) : (
             <div className="divide-y divide-border">
               {filtered.map((t: any) => (
-                <div key={t.id} className={cn("flex items-center gap-3 px-4 py-3 group", t.deadline && new Date(t.deadline) < new Date() && t.status !== "completed" ? "bg-destructive/5" : "")}>
-                  <div className={cn("w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[t.priority] ?? "bg-muted-foreground")} />
-                  <span className="text-sm font-medium text-foreground flex-1 truncate">{t.title}</span>
-                  {t.project_name && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">{t.project_name}</Badge>
+                <div key={t.id} className={cn("px-4 py-3 group", t.deadline && new Date(t.deadline) < new Date() && t.status !== "completed" ? "bg-destructive/5" : "")}>
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[t.priority] ?? "bg-muted-foreground")} />
+                    <span className="text-sm font-medium text-foreground flex-1 truncate">{t.title}</span>
+                    <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                      {t.deadline && (
+                        <span className={cn("text-[10px] hidden sm:inline", new Date(t.deadline) < new Date() && t.status !== "completed" ? "text-destructive font-semibold" : "text-muted-foreground")}>
+                          {format(new Date(t.deadline), "MMM d")}
+                        </span>
+                      )}
+                      <Select
+                        value={t.status}
+                        onValueChange={(val) => updateTask({ taskId: t.id, data: { status: val as TaskUpdateStatus } })}
+                      >
+                        <SelectTrigger className={cn("w-24 sm:w-28 h-6 text-[11px] border shrink-0", STATUS_COLORS[t.status])}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => { if (confirm("Delete task?")) deleteTask({ taskId: t.id }); }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  {(t.project_name || t.assignee_name) && (
+                    <div className="flex items-center gap-2 mt-1 pl-5">
+                      {t.project_name && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t.project_name}</Badge>}
+                      {t.assignee_name && <span className="text-[10px] text-muted-foreground">{t.assignee_name}</span>}
+                    </div>
                   )}
-                  {t.assignee_name && (
-                    <span className="text-xs text-muted-foreground shrink-0">{t.assignee_name}</span>
-                  )}
-                  {t.deadline && (
-                    <span className={cn("text-[10px] shrink-0", new Date(t.deadline) < new Date() && t.status !== "completed" ? "text-destructive font-semibold" : "text-muted-foreground")}>
-                      {format(new Date(t.deadline), "MMM d")}
-                    </span>
-                  )}
-                  <Select
-                    value={t.status}
-                    onValueChange={(val) => updateTask({ taskId: t.id, data: { status: val as TaskUpdateStatus } })}
-                  >
-                    <SelectTrigger className={cn("w-28 h-6 text-[11px] border shrink-0", STATUS_COLORS[t.status])}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={() => { if (confirm("Delete task?")) deleteTask({ taskId: t.id }); }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
                 </div>
               ))}
             </div>

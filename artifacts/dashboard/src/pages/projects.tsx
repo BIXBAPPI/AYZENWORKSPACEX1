@@ -43,14 +43,15 @@ export default function ProjectsPage() {
   );
 
   return (
-    <div className="p-6 max-w-[1400px]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-6 max-w-[1400px]">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Projects</h1>
+          <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Projects</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{filtered.length} project{filtered.length !== 1 ? "s" : ""}</p>
         </div>
         <Button size="sm" className="font-bold" onClick={() => setShowCreate(true)}>
-          <Plus className="w-4 h-4 mr-1.5" /> New Project
+          <Plus className="w-4 h-4 md:mr-1.5" />
+          <span className="hidden md:inline">New Project</span>
         </Button>
       </div>
 

@@ -33,10 +33,10 @@ export default function AnalyticsPage() {
   const peakDay = chartData.reduce((max, d) => d.completed > max.completed ? d : max, { completed: 0, date: "" });
 
   return (
-    <div className="p-6 max-w-[1400px]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-6 max-w-[1400px]">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Analytics</h1>
+          <h1 className="text-xl md:text-2xl font-black text-foreground tracking-tight">Analytics</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Performance trends and insights</p>
         </div>
         <Select value={String(days)} onValueChange={(v) => setDays(Number(v))}>
