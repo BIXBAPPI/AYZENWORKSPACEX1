@@ -23,37 +23,53 @@ redis_client = None
 scheduler: AsyncIOScheduler | None = None
 
 
-def _fix_db_url(url: str) -> str:
+def _fix_db_url(url: str) -> tuple[str, bool]:
+    """Strip sslmode from URL (asyncpg rejects it) and return (url, needs_ssl)."""
+    import re
+    needs_ssl = bool(re.search(r"sslmode=(require|verify-ca|verify-full)", url))
+    # Remove all sslmode query params
+    url = re.sub(r"[?&]sslmode=[^&]*", lambda m: "" if m.group(0).startswith("?") else "?", url)
+    url = re.sub(r"\?&", "?", url).rstrip("?&")
+    # Remove other SSL-related params asyncpg doesn't accept
+    for param in ("sslcert", "sslkey", "sslrootcert"):
+        url = re.sub(rf"[?&]{param}=[^&]*", "", url).rstrip("?&")
     if url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql+asyncpg://", 1)
-    return url
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    return url, needs_ssl
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     global engine, session_factory, redis_client, scheduler
 
-    # FIX #3: Provide clearer error if DATABASE_URL is missing
     db_url_raw = os.environ.get("DATABASE_URL")
     if not db_url_raw:
         raise RuntimeError(
             "DATABASE_URL environment variable is not set. "
-            "Add it to .replit [userenv.shared] or your server environment. "
             "Get it from Supabase → Project Settings → Database → Connection string (URI)."
         )
 
-    database_url = _fix_db_url(db_url_raw)
+    database_url, needs_ssl = _fix_db_url(db_url_raw)
+
+    connect_args: dict = {
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+        "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
+    }
+    if needs_ssl:
+        import ssl as _ssl
+        ssl_ctx = _ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = _ssl.CERT_NONE
+        connect_args["ssl"] = ssl_ctx
+
     engine = create_async_engine(
         database_url,
         poolclass=NullPool,
         echo=False,
-        connect_args={
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
-            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
-        },
+        connect_args=connect_args,
     )
     session_factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     app.state.db = session_factory

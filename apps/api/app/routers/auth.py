@@ -12,29 +12,35 @@ from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import text
 
+from apps.api.app.middleware.auth import create_access_token, verify_token
+
 logger = logging.getLogger("ayzen.routers.auth")
 router = APIRouter()
 resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
+_COOKIE_NAME = "ayzen-token"
+_COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: str
 
+
 class VerifyEmailRequest(BaseModel):
     email: EmailStr
     code: str
 
-class LinkCodeResponse(BaseModel):
-    code: str
-    expires_in: int
 
 def generate_code() -> str:
     return str(random.randint(100000, 999999))
+
 
 async def send_verification_email(email: str, code: str):
     try:
@@ -53,6 +59,7 @@ async def send_verification_email(email: str, code: str):
         })
     except Exception as e:
         logger.error(f"Email send failed: {e}")
+
 
 @router.post("/register")
 async def register(body: RegisterRequest, request: Request):
@@ -97,12 +104,15 @@ async def register(body: RegisterRequest, request: Request):
             text("""
                 INSERT INTO email_verifications (email, code, expires_at)
                 VALUES (:email, :code, :expires_at)
+                ON CONFLICT DO NOTHING
             """),
             {"email": body.email, "code": code, "expires_at": expires_at}
         )
+        await session.commit()
 
     await send_verification_email(body.email, code)
     return {"status": "verification_sent", "email": body.email}
+
 
 @router.post("/verify-email")
 async def verify_email(body: VerifyEmailRequest, request: Request):
@@ -132,23 +142,94 @@ async def verify_email(body: VerifyEmailRequest, request: Request):
             text("UPDATE users SET email_verified = TRUE WHERE email = :email"),
             {"email": body.email}
         )
+        await session.commit()
 
     return {"status": "verified", "email": body.email}
+
 
 @router.post("/login")
 async def login(body: LoginRequest, request: Request, response: Response):
     db = request.app.state.db
     async with db() as session:
         result = await session.execute(
-            text("SELECT id, password_hash, role, tenant_id, email_verified FROM users WHERE email = :email"),
+            text("""
+                SELECT id, password_hash, role, tenant_id, email_verified, full_name
+                FROM users WHERE email = :email
+            """),
             {"email": body.email}
         )
         user = result.fetchone()
-        if not user:
-            raise HTTPException(status_code=401, detail="invalid_credentials")
-        if not bcrypt.checkpw(body.password.encode(), user.password_hash.encode()):
-            raise HTTPException(status_code=401, detail="invalid_credentials")
-        if not user.email_verified:
-            raise HTTPException(status_code=403, detail="email_not_verified")
 
-    return {"status": "logged_in", "email": body.email, "role": user.role}
+    if not user:
+        raise HTTPException(status_code=401, detail="invalid_credentials")
+    if not user.password_hash:
+        raise HTTPException(status_code=401, detail="invalid_credentials")
+    if not bcrypt.checkpw(body.password.encode(), user.password_hash.encode()):
+        raise HTTPException(status_code=401, detail="invalid_credentials")
+    if not user.email_verified:
+        raise HTTPException(status_code=403, detail="email_not_verified")
+
+    token = create_access_token(
+        user_id=str(user.id),
+        tenant_id=str(user.tenant_id),
+        email=body.email,
+        role=user.role,
+    )
+
+    response.set_cookie(
+        key=_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=_COOKIE_MAX_AGE,
+        path="/",
+    )
+
+    return {
+        "status": "logged_in",
+        "email": body.email,
+        "role": user.role,
+        "full_name": user.full_name,
+    }
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(
+        key=_COOKIE_NAME,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+    )
+    return {"status": "logged_out"}
+
+
+@router.get("/me")
+async def get_me(request: Request):
+    user = await verify_token(request)
+    db = request.app.state.db
+    async with db() as session:
+        result = await session.execute(
+            text("""
+                SELECT id, tenant_id, email, full_name, role, onboarding_completed,
+                       created_at
+                FROM users WHERE id = :uid
+            """),
+            {"uid": str(user.user_id)}
+        )
+        row = result.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="user_not_found")
+
+    return {
+        "id": str(row.id),
+        "tenant_id": str(row.tenant_id),
+        "email": row.email,
+        "full_name": row.full_name,
+        "role": row.role,
+        "onboarding_completed": row.onboarding_completed,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
