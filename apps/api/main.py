@@ -91,18 +91,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Scheduler started")
 
     # Auto-register Telegram webhook
+    # In production, REPLIT_DOMAINS has the .replit.app domain (e.g. "myapp.user.repl.co")
+    # In development, fall back to REPLIT_DEV_DOMAIN (.replit.dev preview domain)
     import httpx
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    replit_domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
-    if bot_token and replit_domain:
-        webhook_url = f"https://{replit_domain}/api/v1/bot/webhook"
+    replit_domains = os.environ.get("REPLIT_DOMAINS", "")
+    replit_dev_domain = os.environ.get("REPLIT_DEV_DOMAIN", "")
+    # Pick the first production domain, fall back to dev domain
+    primary_domain = replit_domains.split(",")[0].strip() if replit_domains else replit_dev_domain
+    if bot_token and primary_domain:
+        webhook_url = f"https://{primary_domain}/api/v1/bot/webhook"
         try:
             async with httpx.AsyncClient() as client:
                 r = await client.post(
                     f"https://api.telegram.org/bot{bot_token}/setWebhook",
                     json={"url": webhook_url, "secret_token": os.environ.get("TELEGRAM_WEBHOOK_SECRET", "")}
                 )
-                logger.info(f"Telegram webhook set: {r.json()}")
+                logger.info(f"Telegram webhook set to {webhook_url}: {r.json()}")
         except Exception as e:
             logger.warning(f"Webhook setup failed: {e}")
 

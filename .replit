@@ -2,9 +2,9 @@ modules = ["nodejs-20", "python-3.12", "web", "postgresql-16"]
 
 [deployment]
 router = "application"
-deploymentTarget = "autoscale"
-run = ["bash", "-c", "PYTHONPATH=/home/runner/workspace python3 -m uvicorn apps.api.main:app --host 127.0.0.1 --port 8000 & PORT=8080 NODE_ENV=production node --enable-source-maps artifacts/api-server/dist/index.mjs"]
-build = ["bash", "-c", "pip install --upgrade pip && pip install -r apps/api/requirements.txt && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/dashboard run build && pnpm --filter @workspace/api-server run build"]
+deploymentTarget = "vm"
+run = ["bash", "-c", "PYTHONPATH=/home/runner/workspace .venv/bin/python -m uvicorn apps.api.main:app --host 127.0.0.1 --port 8000 & PORT=8080 NODE_ENV=production node --enable-source-maps artifacts/api-server/dist/index.mjs"]
+build = ["bash", "-c", "UV_SYSTEM_PYTHON=0 UV_PROJECT_ENVIRONMENT=.venv uv sync --no-dev && pnpm install --frozen-lockfile && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/dashboard run build && pnpm --filter @workspace/api-server run build"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
@@ -90,6 +90,8 @@ BOT_USERNAME = "AyzenBot"
 DEFAULT_QUIET_START = "23:00"
 DEFAULT_QUIET_END = "07:00"
 REDIS_URL = "redis://localhost:6379/0"
+UV_SYSTEM_PYTHON = "0"
+UV_PROJECT_ENVIRONMENT = ".venv"
 
 [userenv.development]
 ENVIRONMENT = "development"
