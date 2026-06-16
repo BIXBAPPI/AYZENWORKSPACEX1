@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel
 from sqlalchemy import text
 
@@ -270,8 +270,8 @@ async def update_task(task_id: UUID, body: UpdateTaskRequest, request: Request) 
         }
 
 
-@router.delete("/{task_id}", status_code=204)
-async def delete_task(task_id: UUID, request: Request) -> None:
+@router.delete("/{task_id}", status_code=204, response_class=Response)
+async def delete_task(task_id: UUID, request: Request) -> Response:
     """Archive/soft-delete task."""
     user = await _auth(request)
     db = request.app.state.db
@@ -281,3 +281,4 @@ async def delete_task(task_id: UUID, request: Request) -> None:
             {"tid": str(task_id), "ten_id": str(user.tenant_id)},
         )
         await session.commit()
+    return Response(status_code=204)

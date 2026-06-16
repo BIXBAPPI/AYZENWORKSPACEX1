@@ -35,7 +35,7 @@ export default function DashboardPage() {
     { query: { queryKey: getListAnalyticsSnapshotsQueryKey({ days: 30 }) } }
   );
 
-  const chartData = (snapshots ?? []).map((s: any) => ({
+  const chartData = (Array.isArray(snapshots) ? snapshots : []).map((s: any) => ({
     date: format(new Date(s.snapshot_date), "MMM d"),
     completed: s.completed_tasks,
     new: s.new_tasks,

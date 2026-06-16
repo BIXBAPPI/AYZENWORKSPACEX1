@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
 logger = logging.getLogger("ayzen.routers.projects")
@@ -142,8 +142,8 @@ async def update_project(project_id: UUID, body: UpdateProjectRequest, request: 
         return dict(row._mapping)
 
 
-@router.delete("/{project_id}", status_code=204)
-async def delete_project(project_id: UUID, request: Request) -> None:
+@router.delete("/{project_id}", status_code=204, response_class=Response)
+async def delete_project(project_id: UUID, request: Request) -> Response:
     """A52Y1F5: Soft-delete project (owner only)."""
     user = await _auth(request)
     from apps.api.app.middleware.auth import require_admin
@@ -157,3 +157,4 @@ async def delete_project(project_id: UUID, request: Request) -> None:
             {"pid": str(project_id), "tid": str(user.tenant_id)},
         )
         await session.commit()
+    return Response(status_code=204)
