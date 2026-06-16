@@ -2,168 +2,153 @@ from __future__ import annotations
 
 import logging
 import uuid
+import random
+import os
+from datetime import datetime, timedelta, timezone
 
 import bcrypt
+import resend
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import text
 
 logger = logging.getLogger("ayzen.routers.auth")
-
 router = APIRouter()
-
+resend.api_key = os.environ.get("RESEND_API_KEY", "")
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: str
 
+class VerifyEmailRequest(BaseModel):
+    email: EmailStr
+    code: str
 
 class LinkCodeResponse(BaseModel):
     code: str
     expires_in: int
 
+def generate_code() -> str:
+    return str(random.randint(100000, 999999))
 
-@router.post("/register", status_code=201)
-async def register(body: RegisterRequest, response: Response, request: Request) -> dict:
-    """Register new user with local bcrypt auth. Creates user + default tenant.
-    FIX #4: Issues JWT cookie immediately so user is logged in after registration.
-    FIX #10: Disables RLS for this transaction (bootstrap operation has no tenant yet).
-    """
-    from apps.api.app.middleware.auth import create_access_token
+async def send_verification_email(email: str, code: str):
+    try:
+        resend.Emails.send({
+            "from": "Ayzen <noreply@ayzen.tech>",
+            "to": email,
+            "subject": "Your Ayzen verification code",
+            "html": f"""
+            <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px">
+              <h2 style="color:#6C63FF">Ayzen Verification</h2>
+              <p>Your verification code is:</p>
+              <h1 style="letter-spacing:8px;color:#333;text-align:center">{code}</h1>
+              <p style="color:#888;font-size:13px">Expires in 10 minutes. Do not share this code.</p>
+            </div>
+            """
+        })
+    except Exception as e:
+        logger.error(f"Email send failed: {e}")
 
+@router.post("/register")
+async def register(body: RegisterRequest, request: Request):
     db = request.app.state.db
     async with db() as session:
         existing = await session.execute(
             text("SELECT id FROM users WHERE email = :email"),
-            {"email": body.email},
+            {"email": body.email}
         )
         if existing.fetchone():
             raise HTTPException(status_code=400, detail="email_already_registered")
 
-        user_id = str(uuid.uuid4())
-        tenant_id = str(uuid.uuid4())
-        tenant_slug = f"{body.email.split('@')[0].lower().replace('.', '-')[:40]}-{user_id[:8]}"
         pwd_hash = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
-
-        # FIX #10: Bypass RLS for bootstrap — no tenant context exists yet
-        await session.execute(text("SET LOCAL row_security = off"))
+        user_id = uuid.uuid4()
+        tenant_id = uuid.uuid4()
+        tenant_slug = body.email.split("@")[0] + "-" + str(user_id)[:8]
 
         await session.execute(
             text("INSERT INTO tenants (id, name, slug) VALUES (:tid, :name, :slug)"),
-            {"tid": tenant_id, "name": body.full_name or body.email, "slug": tenant_slug},
+            {"tid": tenant_id, "name": body.full_name or body.email, "slug": tenant_slug}
         )
         await session.execute(
             text("""
                 INSERT INTO users (id, tenant_id, email, full_name, role, password_hash)
                 VALUES (:uid, :tid, :email, :name, 'owner', :pwd)
             """),
-            {"uid": user_id, "tid": tenant_id, "email": body.email, "name": body.full_name, "pwd": pwd_hash},
+            {"uid": user_id, "tid": tenant_id, "email": body.email,
+             "name": body.full_name, "pwd": pwd_hash}
         )
-        # Insert default user_settings row (avoids missing-row errors downstream)
         await session.execute(
             text("INSERT INTO user_settings (user_id) VALUES (:uid) ON CONFLICT DO NOTHING"),
-            {"uid": user_id},
+            {"uid": user_id}
         )
-        # Insert default user_bot_state row
+        await session.execute(
+            text("INSERT INTO user_bot_state (user_id, locale) VALUES (:uid, 'bn') ON CONFLICT DO NOTHING"),
+            {"uid": user_id}
+        )
+
+        code = generate_code()
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
         await session.execute(
             text("""
-                INSERT INTO user_bot_state (user_id, locale)
-                VALUES (:uid, 'bn')
-                ON CONFLICT DO NOTHING
+                INSERT INTO email_verifications (email, code, expires_at)
+                VALUES (:email, :code, :expires_at)
             """),
-            {"uid": user_id},
+            {"email": body.email, "code": code, "expires_at": expires_at}
         )
-        await session.commit()
 
-    # FIX #4: Issue JWT cookie immediately — user is now authenticated
-    token = create_access_token(
-        user_id=user_id,
-        tenant_id=tenant_id,
-        email=body.email,
-        role="owner",
-    )
-    response.set_cookie(
-        "ayzen-token", token,
-        httponly=True, secure=True, samesite="none", max_age=86400, path="/",
-    )
-    return {"status": "registered", "email": body.email, "role": "owner"}
+    await send_verification_email(body.email, code)
+    return {"status": "verification_sent", "email": body.email}
 
+@router.post("/verify-email")
+async def verify_email(body: VerifyEmailRequest, request: Request):
+    db = request.app.state.db
+    async with db() as session:
+        result = await session.execute(
+            text("""
+                SELECT id, expires_at, used FROM email_verifications
+                WHERE email = :email AND code = :code
+                ORDER BY created_at DESC LIMIT 1
+            """),
+            {"email": body.email, "code": body.code}
+        )
+        row = result.fetchone()
+        if not row:
+            raise HTTPException(status_code=400, detail="invalid_code")
+        if row.used:
+            raise HTTPException(status_code=400, detail="code_already_used")
+        if datetime.now(timezone.utc) > row.expires_at:
+            raise HTTPException(status_code=400, detail="code_expired")
+
+        await session.execute(
+            text("UPDATE email_verifications SET used = TRUE WHERE id = :id"),
+            {"id": row.id}
+        )
+        await session.execute(
+            text("UPDATE users SET email_verified = TRUE WHERE email = :email"),
+            {"email": body.email}
+        )
+
+    return {"status": "verified", "email": body.email}
 
 @router.post("/login")
-async def login(body: LoginRequest, response: Response, request: Request) -> dict:
-    """Login with email+password, set HttpOnly cookie."""
-    from apps.api.app.middleware.auth import create_access_token
-
-    db = request.app.state.db
-    async with db() as session:
-        # FIX #10: Bypass RLS for auth lookup — no tenant context yet
-        await session.execute(text("SET LOCAL row_security = off"))
-        result = await session.execute(
-            text("SELECT id, tenant_id, role, password_hash FROM users WHERE email = :email"),
-            {"email": body.email},
-        )
-        row = result.fetchone()
-
-    if not row or not row.password_hash:
-        raise HTTPException(status_code=401, detail="invalid_credentials")
-
-    if not bcrypt.checkpw(body.password.encode(), row.password_hash.encode()):
-        raise HTTPException(status_code=401, detail="invalid_credentials")
-
-    token = create_access_token(
-        user_id=str(row.id),
-        tenant_id=str(row.tenant_id),
-        email=body.email,
-        role=row.role,
-    )
-    response.set_cookie(
-        "ayzen-token", token,
-        httponly=True, secure=True, samesite="none", max_age=86400, path="/",
-    )
-    return {"status": "logged_in", "role": row.role}
-
-
-@router.post("/logout")
-async def logout(response: Response) -> dict:
-    response.delete_cookie("ayzen-token", path="/")
-    return {"status": "logged_out"}
-
-
-@router.get("/me")
-async def me(request: Request) -> dict:
-    from apps.api.app.middleware.auth import verify_token
-    user = await verify_token(request)
+async def login(body: LoginRequest, request: Request, response: Response):
     db = request.app.state.db
     async with db() as session:
         result = await session.execute(
-            text("SELECT full_name, onboarding_completed FROM users WHERE id = :uid"),
-            {"uid": str(user.user_id)},
+            text("SELECT id, password_hash, role, tenant_id, email_verified FROM users WHERE email = :email"),
+            {"email": body.email}
         )
-        row = result.fetchone()
-    return {
-        "user_id": str(user.user_id),
-        "email": user.email,
-        "role": user.role,
-        "tenant_id": str(user.tenant_id),
-        "full_name": row.full_name if row else None,
-        "onboarding_completed": row.onboarding_completed if row else False,
-    }
+        user = result.fetchone()
+        if not user:
+            raise HTTPException(status_code=401, detail="invalid_credentials")
+        if not bcrypt.checkpw(body.password.encode(), user.password_hash.encode()):
+            raise HTTPException(status_code=401, detail="invalid_credentials")
+        if not user.email_verified:
+            raise HTTPException(status_code=403, detail="email_not_verified")
 
-
-@router.post("/bot-link-code", response_model=LinkCodeResponse)
-async def generate_link_code(request: Request) -> LinkCodeResponse:
-    from apps.api.app.middleware.auth import verify_token
-    from apps.api.app.services.bot_user_service import BotUserService
-
-    user = await verify_token(request)
-    redis = request.app.state.redis
-    db = request.app.state.db
-    svc = BotUserService(redis, db)
-    code = await svc.generate_link_code(user.user_id)
-    return LinkCodeResponse(code=code, expires_in=600)
+    return {"status": "logged_in", "email": body.email, "role": user.role}

@@ -19,6 +19,9 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Python API"
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Node API"
 
 [[workflows.workflow]]
 name = "Python API"
@@ -46,7 +49,6 @@ externalPort = 8000
 
 [[ports]]
 localPort = 8080
-externalPort = 8080
 
 [[ports]]
 localPort = 8081
@@ -69,7 +71,17 @@ BOT_USERNAME = "AyzenBot"
 DEFAULT_QUIET_START = "23:00"
 DEFAULT_QUIET_END = "07:00"
 REDIS_URL = "redis://localhost:6379/0"
+PORT = "8080"
 
 [nix]
 channel = "stable-25_05"
 packages = ["cargo", "libiconv", "libxcrypt", "postgresql", "rustc"]
+
+[[workflows.workflow]]
+name = "Node API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace/artifacts/api-server && PORT=8080 node --enable-source-maps ./dist/index.mjs"
+waitForPort = 8080
