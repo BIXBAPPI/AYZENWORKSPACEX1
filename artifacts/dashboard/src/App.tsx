@@ -31,6 +31,7 @@ import ToolsPage from "@/pages/tools";
 import SubscriptionPage from "@/pages/subscription";
 import FeedbackPage from "@/pages/feedback";
 import TelegramLinkPage from "@/pages/telegram-link";
+import VideoTemplate from "@/components/video/VideoTemplate";
 import { AppLayout } from "@/components/layout";
 
 const queryClient = new QueryClient({
@@ -82,6 +83,7 @@ function Router() {
       <Route path="/subscription" component={() => <ProtectedRoute component={SubscriptionPage} />} />
       <Route path="/feedback" component={() => <ProtectedRoute component={FeedbackPage} />} />
       <Route path="/telegram-link" component={() => <ProtectedRoute component={TelegramLinkPage} />} />
+      <Route path="/video" component={VideoTemplate} />
       <Route component={NotFound} />
     </Switch>
   );

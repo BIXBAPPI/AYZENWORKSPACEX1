@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "izraYtT0UZ42xx1W052nh"
+uri = "file://artifacts/dashboard/public/images/crypto-bg.png"
+type = "image"
+title = "crypto dark abstract background"
+
+[[generated]]
+id = "a0gPIqb8mcsNOy-2l7-2k"
+uri = "file://artifacts/dashboard/public/images/bot-bg.png"
+type = "image"
+title = "telegram bot futuristic background"
+
+[[generated]]
+id = "dvZYwmEJsm3ShNWZ_WqCh"
+uri = "file://artifacts/dashboard/public/images/dashboard-bg.png"
+type = "image"
+title = "dashboard analytics abstract"
