@@ -20,6 +20,11 @@ import HealthPage from "@/pages/health";
 import AccountsPage from "@/pages/accounts";
 import NotificationsPage from "@/pages/notifications";
 import SettingsPage from "@/pages/settings";
+import AccountVaultPage from "@/pages/account-vault";
+import ProfilePage from "@/pages/profile";
+import GasTrackerPage from "@/pages/gas-tracker";
+import AIAssistantPage from "@/pages/ai-assistant";
+import HomePage from "@/pages/home";
 import { AppLayout } from "@/components/layout";
 
 const queryClient = new QueryClient({
@@ -44,7 +49,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={() => <Redirect to="/dashboard" />} />
+      <Route path="/" component={HomePage} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/verify-email" component={VerifyEmail} />
@@ -61,6 +66,10 @@ function Router() {
       <Route path="/health" component={() => <ProtectedRoute component={HealthPage} />} />
       <Route path="/notifications" component={() => <ProtectedRoute component={NotificationsPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
+      <Route path="/vault" component={() => <ProtectedRoute component={AccountVaultPage} />} />
+      <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
+      <Route path="/gas" component={() => <ProtectedRoute component={GasTrackerPage} />} />
+      <Route path="/ai" component={() => <ProtectedRoute component={AIAssistantPage} />} />
       <Route component={NotFound} />
     </Switch>
   );

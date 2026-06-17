@@ -22,23 +22,28 @@ import {
   TrendingUp,
   Code2,
   Activity,
-  KeyRound,
+  Lock,
+  User,
+  Fuel,
+  Bot,
 } from "lucide-react";
 
 const NAV_MAIN = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
+  { href: "/analysis", label: "Analysis", icon: TrendingUp },
   { href: "/members", label: "Members", icon: Users },
   { href: "/broadcasts", label: "Broadcasts", icon: Megaphone },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/analysis", label: "My Analysis", icon: TrendingUp },
-  { href: "/accounts", label: "Account Vault", icon: KeyRound },
+  { href: "/vault", label: "Vault", icon: Lock },
+  { href: "/profile", label: "Profile", icon: User },
+  { href: "/gas", label: "Gas Tracker", icon: Fuel },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const NAV_ADMIN = [
+  { href: "/ai", label: "AI Assistant", icon: Bot },
   { href: "/developer", label: "Developer", icon: Code2 },
   { href: "/health", label: "Health", icon: Activity },
 ];
@@ -80,12 +85,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-col h-full bg-sidebar">
       <div className="h-14 border-b border-sidebar-border flex items-center px-4 gap-2 shrink-0">
-        <div className="w-7 h-7 bg-primary rounded-sm flex items-center justify-center">
-          <Zap className="w-4 h-4 text-primary-foreground" />
+        <div className="w-7 h-7 flex items-center justify-center rounded-sm" style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)" }}>
+          <Zap className="w-4 h-4 text-white" />
         </div>
-        <span className="font-bold text-sidebar-foreground tracking-tight text-sm">AYZEN</span>
+        <span className="font-black text-sidebar-foreground tracking-tight text-sm" style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          AYZEN
+        </span>
         <Badge variant="outline" className="ml-auto text-[9px] px-1 py-0 h-4 border-primary/40 text-primary">
-          BETA
+          V4
         </Badge>
       </div>
 
@@ -152,13 +159,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-primary rounded-sm flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-primary-foreground" />
+            <div className="w-6 h-6 rounded-sm flex items-center justify-center" style={{ background: "linear-gradient(135deg,#7c3aed,#06b6d4)" }}>
+              <Zap className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-sidebar-foreground text-sm tracking-tight">AYZEN</span>
+            <span className="font-black text-sidebar-foreground text-sm tracking-tight">AYZEN</span>
           </div>
           <Badge variant="outline" className="ml-auto text-[9px] px-1 py-0 h-4 border-primary/40 text-primary">
-            BETA
+            V4
           </Badge>
         </header>
 

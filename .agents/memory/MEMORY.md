@@ -6,3 +6,5 @@
 - [pgbouncer asyncpg fix](pgbouncer-asyncpg.md) — Supabase pgbouncer transaction mode requires NullPool + prepared_statement_name_func=uuid4 + statement_cache_size=0 in create_async_engine
 - [Telegram bot fixes](telegram-bot-fixes.md) — three bugs fixed: wrong webhook secret header, app missing from ctx, raw SQL without text() in bot services
 - [Express 5 wildcard route](express5-wildcard.md) — Express 5 uses path-to-regexp v8; bare `"*"` crashes on startup, must use `"*splat"` for catch-all SPA fallback
+- [V4 auth pattern](v4-auth-pattern.md) — activation code required for non-first user; 2FA returns requires_2fa:true then POST /auth/verify-2fa; new pages use raw fetch not generated hooks
+- [V4 admin seed](v4-admin-seed.md) — admin bibappix420@gmail.com is seeded via psql; first user gets owner role with no activation code required; subsequent users need valid AYZEN-XXXX code

@@ -198,6 +198,15 @@ def create_app() -> FastAPI:
     from apps.api.app.routers.tma_auth import router as tma_router
     from apps.api.app.routers.system import router as system_router
     from apps.api.app.routers.accounts import router as accounts_router
+    # V4 new routers
+    from apps.api.app.routers.vault import router as vault_router
+    from apps.api.app.routers.gas import router as gas_router
+    from apps.api.app.routers.activation import router as activation_router
+    from apps.api.app.routers.referrals import router as referrals_router
+    from apps.api.app.routers.profile import router as profile_router
+    from apps.api.app.routers.wallet_xp import router as wallet_xp_router
+    from apps.api.app.routers.ai_assistant import router as ai_router
+    from apps.api.app.routers.telemetry import router as telemetry_router
 
     app.include_router(telegram_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
@@ -213,6 +222,15 @@ def create_app() -> FastAPI:
     app.include_router(tma_router, prefix="/api/v1/tma", tags=["tma"])
     app.include_router(system_router, prefix="/api/v1/system", tags=["system"])
     app.include_router(accounts_router, prefix="/api/v1/accounts", tags=["accounts"])
+    # V4 routers
+    app.include_router(vault_router, prefix="/api/v1/vault", tags=["vault"])
+    app.include_router(gas_router, prefix="/api/v1/gas", tags=["gas"])
+    app.include_router(activation_router, prefix="/api/v1/activation-codes", tags=["activation"])
+    app.include_router(referrals_router, prefix="/api/v1/referrals", tags=["referrals"])
+    app.include_router(profile_router, prefix="/api/v1/profile", tags=["profile"])
+    app.include_router(wallet_xp_router, prefix="/api/v1/wallet", tags=["wallet"])
+    app.include_router(ai_router, prefix="/api/v1/ai", tags=["ai"])
+    app.include_router(telemetry_router, prefix="/api/v1/telemetry", tags=["telemetry"])
 
     @app.get("/api/v1/health", tags=["health"])
     async def health_check() -> dict:
