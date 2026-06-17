@@ -34,13 +34,13 @@ args = "AYZEN Dashboard"
 name = "Python API"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PYTHONPATH=/home/runner/workspace /home/runner/workspace/.venv/bin/python -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload"
-waitForPort = 8000
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PYTHONPATH=/home/runner/workspace WATCHFILES_IGNORE_PATHS=/home/runner/workspace/node_modules,/home/runner/workspace/.venv,/home/runner/workspace/artifacts/dashboard/node_modules,/home/runner/workspace/artifacts/api-server/node_modules /home/runner/workspace/.venv/bin/python -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload --reload-exclude '*.log' --reload-exclude 'node_modules' --reload-exclude '.venv'"
+waitForPort = 8000
 
 [[workflows.workflow]]
 name = "Node API Server"
@@ -81,10 +81,6 @@ externalPort = 80
 [[ports]]
 localPort = 8000
 externalPort = 8000
-
-[[ports]]
-localPort = 8080
-externalPort = 8080
 
 [[ports]]
 localPort = 8081
