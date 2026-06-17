@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   Users, Key, GitBranch, BarChart3, Copy, Check, Trash2, RefreshCw,
   Shield, Zap, Search, Plus, ChevronDown, AlertCircle, Activity, Bot,
-  CheckCircle2, XCircle, Clock, TrendingUp
+  CheckCircle2, XCircle, Clock, TrendingUp, ChevronRight, FolderKanban,
+  Wallet, Twitter, MessageSquare, Eye
 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
@@ -54,6 +56,7 @@ function UsersTab() {
   const [editRole, setEditRole] = useState("");
   const [editXP, setEditXP] = useState("");
   const [linkInfo, setLinkInfo] = useState<Record<string, any>>({});
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -179,6 +182,10 @@ function UsersTab() {
                 </td>
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                      title="View detail" onClick={() => setViewUserId(u.id)}>
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
                     <Button variant="outline" size="sm" className="h-7 text-xs px-2"
                       onClick={() => { setEditUser(u); setEditRole(u.role); setEditXP(String(u.global_xp || 0)); }}>
                       Edit
@@ -232,6 +239,8 @@ function UsersTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <UserDetailDrawer userId={viewUserId} onClose={() => setViewUserId(null)} />
     </div>
   );
 }
@@ -536,6 +545,127 @@ function SystemTab() {
         )}
       </div>
     </div>
+  );
+}
+
+// ── User Detail Drawer ────────────────────────────────────────────────────────
+
+function UserDetailDrawer({ userId, onClose }: { userId: string | null; onClose: () => void }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId) { setData(null); return; }
+    setLoading(true);
+    api(`/admin/users/${userId}/progress`)
+      .then(r => r.json())
+      .then(d => setData(d))
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  const u = data?.user;
+  const projects: any[] = data?.projects ?? [];
+
+  const tier = (xp: number) => {
+    if (xp >= 20000) return { label: "💎 Platinum", color: "text-cyan-400" };
+    if (xp >= 5000) return { label: "🥇 Gold", color: "text-yellow-400" };
+    if (xp >= 1000) return { label: "🥈 Silver", color: "text-slate-300" };
+    return { label: "🥉 Bronze", color: "text-amber-600" };
+  };
+
+  return (
+    <Sheet open={!!userId} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+        <SheetHeader className="mb-4">
+          <SheetTitle className="font-black">Member Detail</SheetTitle>
+        </SheetHeader>
+
+        {loading && (
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-muted/20 rounded-lg animate-pulse" />)}
+          </div>
+        )}
+
+        {!loading && u && (
+          <div className="space-y-5">
+            {/* User summary card */}
+            <div className="bg-card border border-border rounded-lg p-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-black text-primary shrink-0">
+                {(u.full_name || u.email)?.[0]?.toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-foreground text-base">{u.full_name || u.username || "—"}</div>
+                <div className="text-xs text-muted-foreground truncate">{u.email}</div>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <Badge variant="outline" className="capitalize text-[10px]">{u.role}</Badge>
+                  <span className={`text-xs font-bold ${tier(u.global_xp || 0).color}`}>{tier(u.global_xp || 0).label}</span>
+                  <span className="text-xs text-muted-foreground font-mono">{(u.global_xp || 0).toLocaleString()} XP</span>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {u.email_verified && <span className="flex items-center gap-1 text-[11px] text-green-500"><CheckCircle2 className="w-3 h-3" /> Verified</span>}
+                  {u.telegram_handle && <span className="flex items-center gap-1 text-[11px] text-blue-400"><Bot className="w-3 h-3" /> @{u.telegram_handle}</span>}
+                  {u.last_active_date && <span className="text-[11px] text-muted-foreground">Last active: {u.last_active_date}</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* Projects & Progress */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <FolderKanban className="w-4 h-4" /> Project Access & Progress
+              </h3>
+              {projects.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-border rounded-lg">
+                  <FolderKanban className="w-6 h-6 mx-auto mb-1.5 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">No project activity yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projects.map((p: any) => (
+                    <div key={p.project_id} className="border border-border rounded-lg p-3 bg-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-foreground">{p.project_name}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{p.slot_count} slot{p.slot_count !== 1 ? "s" : ""}</Badge>
+                          <span className="text-xs font-mono text-primary">{p.completed_tasks}/{p.total_tasks} tasks</span>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-2">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${p.completion_pct}%` }}
+                        />
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mb-2">{p.completion_pct}% complete</div>
+                      {/* Slots */}
+                      {p.slots.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {p.slots.map((s: any) => (
+                            <div key={s.id} className="flex items-center gap-1.5 bg-muted/40 border border-border rounded px-2 py-1">
+                              <span className="text-[11px] font-black text-primary">{s.slot_name}</span>
+                              {s.wallet_address && (
+                                <span className="text-[10px] font-mono text-muted-foreground">{s.wallet_address.slice(0, 8)}…</span>
+                              )}
+                              {s.twitter_username && (
+                                <span className="text-[10px] text-muted-foreground">{s.twitter_username}</span>
+                              )}
+                              {s.completions > 0 && (
+                                <Badge className="text-[9px] px-1 py-0 bg-green-500/10 text-green-400 border-green-500/20">✓{s.completions}</Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
 

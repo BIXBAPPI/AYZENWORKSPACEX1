@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Lock, Wallet, Share2, Shield, Copy, Eye, EyeOff, CheckCircle, Loader2, RotateCcw, Send, Coins, ArrowLeftRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Lock, Wallet, Share2, Shield, Copy, Eye, EyeOff, CheckCircle, Loader2, RotateCcw, Send, Coins, ArrowLeftRight, Users, Plus, Trash2, FolderKanban, Twitter, CheckCircle2 } from "lucide-react";
 
 const api = (path: string, opts?: RequestInit) =>
   fetch(`/api/v1${path}`, { credentials: "include", ...opts });
@@ -471,6 +473,247 @@ function XPWalletTab() {
   );
 }
 
+// ── Accounts (Multi-Account Slots) Tab ───────────────────────────────────────
+
+type Slot = {
+  id: string; project_id: string; project_name: string; slot_name: string;
+  wallet_address: string | null; twitter_username: string | null; discord_username: string | null;
+  completions: number;
+};
+
+function AccountsTab() {
+  const { toast } = useToast();
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [showAdd, setShowAdd] = useState(false);
+  const [editSlot, setEditSlot] = useState<Slot | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [form, setForm] = useState({ project_id: "", slot_name: "", wallet_address: "", twitter_username: "", discord_username: "" });
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [slotsData, projData] = await Promise.all([
+        apiFetch("/progress/slots"),
+        apiFetch("/projects/"),
+      ]);
+      setSlots(Array.isArray(slotsData) ? slotsData : []);
+      setProjects(Array.isArray(projData) ? projData : []);
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const filtered = selectedProject === "all" ? slots : slots.filter(s => s.project_id === selectedProject);
+
+  const grouped = filtered.reduce<Record<string, Slot[]>>((acc, s) => {
+    (acc[s.project_name] = acc[s.project_name] || []).push(s);
+    return acc;
+  }, {});
+
+  const openAdd = () => {
+    setForm({ project_id: projects[0]?.id || "", slot_name: "", wallet_address: "", twitter_username: "", discord_username: "" });
+    setShowAdd(true);
+  };
+
+  const openEdit = (s: Slot) => {
+    setEditSlot(s);
+    setForm({ project_id: s.project_id, slot_name: s.slot_name, wallet_address: s.wallet_address || "", twitter_username: s.twitter_username || "", discord_username: s.discord_username || "" });
+  };
+
+  const createSlot = async () => {
+    if (!form.project_id || !form.slot_name.trim()) return;
+    setSaving(true);
+    try {
+      const r = await api("/progress/slots", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      if (r.ok) { toast({ title: "Account added ✅" }); setShowAdd(false); load(); }
+      else {
+        const d = await r.json();
+        toast({ title: d.detail === "slot_name_exists" ? "Slot name already exists for this project" : "Failed to create slot", variant: "destructive" });
+      }
+    } finally { setSaving(false); }
+  };
+
+  const saveEdit = async () => {
+    if (!editSlot) return;
+    setSaving(true);
+    try {
+      const { project_id: _, ...update } = form;
+      const r = await api(`/progress/slots/${editSlot.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(update) });
+      if (r.ok) { toast({ title: "Updated ✅" }); setEditSlot(null); load(); }
+      else toast({ title: "Failed to update", variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  const deleteSlot = async (id: string) => {
+    if (!confirm("Delete this account slot? This will also remove its task completion history.")) return;
+    setDeleting(id);
+    try {
+      await api(`/progress/slots/${id}`, { method: "DELETE" });
+      toast({ title: "Slot deleted" });
+      load();
+    } finally { setDeleting(null); }
+  };
+
+  const SLOT_NAMES = ["M1","M2","M3","M4","M5","M6","M7","M8","M9","M10","WEB","ALT1","ALT2","ALT3"];
+
+  const SlotForm = ({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) => (
+    <div className="space-y-3 py-2">
+      {showAdd && (
+        <div>
+          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1">Project</Label>
+          <Select value={form.project_id} onValueChange={v => setForm(f => ({ ...f, project_id: v }))}>
+            <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
+            <SelectContent>
+              {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <div>
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1">Slot Name</Label>
+        <Select value={form.slot_name} onValueChange={v => setForm(f => ({ ...f, slot_name: v }))}>
+          <SelectTrigger><SelectValue placeholder="e.g. M1, M2…" /></SelectTrigger>
+          <SelectContent>
+            {SLOT_NAMES.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1">Wallet Address</Label>
+        <Input value={form.wallet_address} onChange={e => setForm(f => ({ ...f, wallet_address: e.target.value }))} placeholder="0x… or solana address" className="font-mono text-xs" />
+      </div>
+      <div>
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1">Twitter / X Username</Label>
+        <Input value={form.twitter_username} onChange={e => setForm(f => ({ ...f, twitter_username: e.target.value }))} placeholder="@username" />
+      </div>
+      <div>
+        <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground block mb-1">Discord Username</Label>
+        <Input value={form.discord_username} onChange={e => setForm(f => ({ ...f, discord_username: e.target.value }))} placeholder="user#1234" />
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
+        <Button size="sm" disabled={saving || !form.slot_name} onClick={onSave}>
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (loading) return <div className="space-y-3">{Array.from({length:3}).map((_,i)=><div key={i} className="h-16 bg-muted/20 rounded-lg animate-pulse"/>)}</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+          <FolderKanban className="w-4 h-4 text-muted-foreground shrink-0" />
+          <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects ({slots.length} accounts)</SelectItem>
+              {projects.map(p => {
+                const count = slots.filter(s => s.project_id === p.id).length;
+                return <SelectItem key={p.id} value={p.id}>{p.name} ({count})</SelectItem>;
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button size="sm" className="h-8 gap-1.5 shrink-0" onClick={openAdd}>
+          <Plus className="w-3.5 h-3.5" /> Add Account
+        </Button>
+      </div>
+
+      {Object.keys(grouped).length === 0 ? (
+        <div className="py-16 text-center border border-dashed border-border rounded-lg">
+          <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
+          <p className="text-sm font-medium text-muted-foreground">No account slots yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Add an account slot per project for multi-account task completion</p>
+          <Button size="sm" className="mt-4 gap-1.5" onClick={openAdd}><Plus className="w-3.5 h-3.5" /> Add First Account</Button>
+        </div>
+      ) : (
+        Object.entries(grouped).map(([projectName, projectSlots]) => (
+          <div key={projectName}>
+            <div className="flex items-center gap-2 mb-2">
+              <FolderKanban className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{projectName}</span>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">{projectSlots.length} slot{projectSlots.length !== 1 ? "s" : ""}</Badge>
+            </div>
+            <div className="space-y-2">
+              {projectSlots.map(slot => (
+                <div key={slot.id} className="border border-border rounded-lg p-3 bg-card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-xs font-black text-primary shrink-0">{slot.slot_name}</div>
+                      <div className="min-w-0 space-y-1">
+                        {slot.wallet_address && (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <Wallet className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <code className="font-mono truncate max-w-[200px] text-foreground/80">{slot.wallet_address}</code>
+                            <CopyButton value={slot.wallet_address} />
+                          </div>
+                        )}
+                        {slot.twitter_username && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Twitter className="w-3 h-3 shrink-0" />
+                            {slot.twitter_username}
+                          </div>
+                        )}
+                        {slot.discord_username && (
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="w-3 h-3 shrink-0 text-center font-bold text-[10px]">DC</span>
+                            {slot.discord_username}
+                          </div>
+                        )}
+                        {!slot.wallet_address && !slot.twitter_username && !slot.discord_username && (
+                          <span className="text-xs text-muted-foreground/50 italic">No details yet</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {slot.completions > 0 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-green-500 border-green-500/30">
+                          <CheckCircle2 className="w-2.5 h-2.5 mr-1" />{slot.completions}
+                        </Badge>
+                      )}
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => openEdit(slot)}>
+                        <RotateCcw className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10" disabled={deleting === slot.id} onClick={() => deleteSlot(slot.id)}>
+                        {deleting === slot.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
+
+      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-black">Add Account Slot</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground -mt-2">Each slot represents a separate wallet/identity for multi-account task completion.</p>
+          <SlotForm onSave={createSlot} onCancel={() => setShowAdd(false)} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editSlot} onOpenChange={() => setEditSlot(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-black">Edit Slot — {editSlot?.slot_name}</DialogTitle></DialogHeader>
+          <SlotForm onSave={saveEdit} onCancel={() => setEditSlot(null)} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function AccountVault() {
   const [vault, setVault] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -507,14 +750,16 @@ export default function AccountVault() {
         </div>
       ) : (
         <Tabs defaultValue="wallets">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="wallets" className="gap-1.5"><Wallet className="w-3.5 h-3.5" />Wallets</TabsTrigger>
             <TabsTrigger value="socials" className="gap-1.5"><Share2 className="w-3.5 h-3.5" />Socials</TabsTrigger>
+            <TabsTrigger value="accounts" className="gap-1.5"><Users className="w-3.5 h-3.5" />Accounts</TabsTrigger>
             <TabsTrigger value="2fa" className="gap-1.5"><Shield className="w-3.5 h-3.5" />2FA</TabsTrigger>
             <TabsTrigger value="xp" className="gap-1.5"><Coins className="w-3.5 h-3.5" />XP Wallet</TabsTrigger>
           </TabsList>
           <TabsContent value="wallets"><WalletsTab vault={vault} refresh={refresh} /></TabsContent>
           <TabsContent value="socials"><SocialsTab vault={vault} refresh={refresh} /></TabsContent>
+          <TabsContent value="accounts"><AccountsTab /></TabsContent>
           <TabsContent value="2fa"><TwoFATab vault={vault} refresh={refresh} /></TabsContent>
           <TabsContent value="xp"><XPWalletTab /></TabsContent>
         </Tabs>

@@ -7,6 +7,7 @@ import logging
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import text
 from apps.api.app.services.i18n_service import t, escape_md
 from apps.api.app.services.bot_context_service import BotContextService
 from apps.api.app.services.bot_state_service import BotStateService
@@ -20,9 +21,9 @@ TYPE_EMOJI = {"twitter": "🐦", "discord": "💬", "onchain": "🔗", "form": "
 
 async def _get_project_tasks(db: Any, user_id: UUID, project_id: UUID, tenant_id: UUID) -> list[dict]:
     async with db() as session:
-        await session.execute(f"SET LOCAL app.current_tenant = '{tenant_id}'")
+        await session.execute(text(f"SET LOCAL app.current_tenant = '{tenant_id}'"))
         result = await session.execute(
-            """
+            text("""
             SELECT t.id, t.title, t.task_type, t.target_url, t.points_per_account,
                    t.deadline, t.max_slots_per_user,
                    COUNT(DISTINCT tc.id) FILTER (WHERE tc.user_id = :uid) as done_count,
@@ -35,7 +36,7 @@ async def _get_project_tasks(db: Any, user_id: UUID, project_id: UUID, tenant_id
               AND (t.deadline IS NULL OR t.deadline > NOW())
             GROUP BY t.id, t.title, t.task_type, t.target_url, t.points_per_account, t.deadline, t.max_slots_per_user
             ORDER BY t.created_at DESC
-            """,
+            """),
             {"uid": str(user_id), "pid": str(project_id)},
         )
         return [dict(r._mapping) for r in result.fetchall()]
@@ -149,9 +150,9 @@ async def task_detail_callback(update: dict, ctx: dict) -> None:
     user_id = bot_ctx.get("user_id")
 
     async with db() as session:
-        await session.execute(f"SET LOCAL app.current_tenant = '{tenant_id}'")
+        await session.execute(text(f"SET LOCAL app.current_tenant = '{tenant_id}'"))
         result = await session.execute(
-            """
+            text("""
             SELECT t.id, t.title, t.task_type, t.target_url, t.points_per_account,
                    t.deadline, t.project_id,
                    p.name as project_name,
@@ -163,7 +164,7 @@ async def task_detail_callback(update: dict, ctx: dict) -> None:
             LEFT JOIN account_slots asl ON asl.user_id = :uid AND asl.project_id = t.project_id
             WHERE t.id = :tid
             GROUP BY t.id, t.title, t.task_type, t.target_url, t.points_per_account, t.deadline, t.project_id, p.name
-            """,
+            """),
             {"tid": task_id, "uid": str(user_id)},
         )
         task = result.fetchone()

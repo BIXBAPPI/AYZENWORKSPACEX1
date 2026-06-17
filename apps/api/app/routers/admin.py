@@ -140,6 +140,96 @@ async def update_user(user_id: str, body: UpdateUserRequest, request: Request) -
     return {"updated": True}
 
 
+@router.get("/users/{user_id}/progress")
+async def get_user_progress(user_id: str, request: Request) -> dict:
+    """Admin: full user detail — projects, slots, task completion progress."""
+    admin = await _admin(request)
+    db = request.app.state.db
+    async with db() as session:
+        # User info
+        r = await session.execute(
+            text("""
+                SELECT u.id, u.email, u.full_name, u.username, u.role,
+                       u.global_xp, u.global_streak, u.email_verified,
+                       u.telegram_user_id, u.telegram_handle, u.avatar_url,
+                       u.created_at, u.last_active_date
+                FROM users u
+                WHERE u.id = :uid AND u.tenant_id = :tid
+            """),
+            {"uid": user_id, "tid": str(admin.tenant_id)},
+        )
+        user_row = r.mappings().fetchone()
+        if not user_row:
+            raise HTTPException(404, "user_not_found")
+
+        user_info = dict(user_row)
+        user_info["id"] = str(user_info["id"])
+        user_info["telegram_user_id"] = str(user_info["telegram_user_id"]) if user_info["telegram_user_id"] else None
+        user_info["created_at"] = user_info["created_at"].isoformat() if user_info["created_at"] else None
+        user_info["last_active_date"] = str(user_info["last_active_date"]) if user_info["last_active_date"] else None
+
+        # Projects with slot counts and task progress
+        r2 = await session.execute(
+            text("""
+                SELECT
+                    p.id AS project_id,
+                    p.name AS project_name,
+                    COUNT(DISTINCT asl.id) AS slot_count,
+                    COUNT(DISTINCT t.id) AS total_tasks,
+                    COUNT(DISTINCT tc.task_id) AS completed_tasks
+                FROM projects p
+                LEFT JOIN account_slots asl ON asl.project_id = p.id AND asl.user_id = :uid
+                LEFT JOIN tasks t ON t.project_id = p.id AND t.archived_at IS NULL
+                LEFT JOIN task_completions tc ON tc.task_id = t.id AND tc.user_id = :uid
+                WHERE p.tenant_id = :tid
+                  AND (asl.id IS NOT NULL OR tc.id IS NOT NULL)
+                GROUP BY p.id, p.name
+                ORDER BY p.name
+            """),
+            {"uid": user_id, "tid": str(admin.tenant_id)},
+        )
+        project_rows = r2.mappings().fetchall()
+
+        projects = []
+        for row in project_rows:
+            # Slots detail for this project
+            r3 = await session.execute(
+                text("""
+                    SELECT id, slot_name, wallet_address, twitter_username, discord_username,
+                           created_at,
+                           (SELECT COUNT(*) FROM task_completions tc WHERE tc.account_slot_id = account_slots.id) AS completions
+                    FROM account_slots
+                    WHERE user_id = :uid AND project_id = :pid
+                    ORDER BY slot_name
+                """),
+                {"uid": user_id, "pid": str(row["project_id"])},
+            )
+            slots = [
+                {
+                    "id": str(s["id"]),
+                    "slot_name": s["slot_name"],
+                    "wallet_address": s["wallet_address"],
+                    "twitter_username": s["twitter_username"],
+                    "discord_username": s["discord_username"],
+                    "completions": int(s["completions"] or 0),
+                }
+                for s in r3.mappings().fetchall()
+            ]
+            total = int(row["total_tasks"] or 0)
+            done = int(row["completed_tasks"] or 0)
+            projects.append({
+                "project_id": str(row["project_id"]),
+                "project_name": row["project_name"],
+                "slot_count": int(row["slot_count"] or 0),
+                "total_tasks": total,
+                "completed_tasks": done,
+                "completion_pct": round((done / max(total, 1)) * 100, 1),
+                "slots": slots,
+            })
+
+    return {"user": user_info, "projects": projects}
+
+
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: str, request: Request) -> dict:
     admin = await _admin(request)
