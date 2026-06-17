@@ -28,9 +28,10 @@ export default function AnalyticsPage() {
     members: s.active_members,
   }));
 
-  const totalCompleted = chartData.reduce((acc, d) => acc + d.completed, 0);
-  const totalNew = chartData.reduce((acc, d) => acc + d.new, 0);
-  const peakDay = chartData.reduce((max, d) => d.completed > max.completed ? d : max, { completed: 0, date: "" });
+  type ChartRow = { date: string; completed: number; new: number; members: number };
+  const totalCompleted = chartData.reduce((acc: number, d: ChartRow) => acc + d.completed, 0);
+  const totalNew = chartData.reduce((acc: number, d: ChartRow) => acc + d.new, 0);
+  const peakDay = chartData.reduce((max: ChartRow, d: ChartRow) => d.completed > max.completed ? d : max, { completed: 0, date: "", new: 0, members: 0 });
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px]">

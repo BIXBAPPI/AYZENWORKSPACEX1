@@ -57,8 +57,8 @@ function PresentationMode({ tutorial, onClose, onProgress }: {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") setIdx((i) => Math.min(i + 1, total - 1));
-      if (e.key === "ArrowLeft" || e.key === "ArrowUp") setIdx((i) => Math.max(i - 1, 0));
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") setIdx((i: number) => Math.min(i + 1, total - 1));
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") setIdx((i: number) => Math.max(i - 1, 0));
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
@@ -134,7 +134,7 @@ function PresentationMode({ tutorial, onClose, onProgress }: {
       </div>
 
       <div className="flex items-center justify-between px-8 py-4 border-t border-border shrink-0">
-        <Button variant="outline" onClick={() => setIdx((i) => Math.max(i - 1, 0))} disabled={idx === 0}>
+        <Button variant="outline" onClick={() => setIdx((i: number) => Math.max(i - 1, 0))} disabled={idx === 0}>
           <ChevronLeft className="w-4 h-4 mr-1" /> Previous
         </Button>
         <div className="flex gap-1">
@@ -148,7 +148,7 @@ function PresentationMode({ tutorial, onClose, onProgress }: {
           ))}
         </div>
         {idx < total - 1 ? (
-          <Button onClick={() => setIdx((i) => Math.min(i + 1, total - 1))}>
+          <Button onClick={() => setIdx((i: number) => Math.min(i + 1, total - 1))}>
             Next <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         ) : (
@@ -220,7 +220,7 @@ function TutorialEditor({ tutorial, onSave, onClose }: {
   };
 
   const save = async () => {
-    if (!title.trim()) return toast({ title: "Title required", variant: "destructive" });
+    if (!title.trim()) { toast({ title: "Title required", variant: "destructive" }); return; }
     setSaving(true);
     const payload = { title, description: desc, difficulty: diff, estimated_time: Number(est), slides, published };
     const r = await api(isEdit ? `/tutorials/${tutorial.id}` : "/tutorials", {

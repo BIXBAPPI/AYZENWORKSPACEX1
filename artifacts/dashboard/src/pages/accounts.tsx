@@ -250,10 +250,7 @@ export default function AccountsPage() {
 }
 
 function AccountCard({ acc, revealed, onToggleReveal, onCopy, onEdit, onDelete }: any) {
-  const Icon = getIcon(
-    // find icon from category_color
-    "key"
-  );
+  const Icon = getIcon(acc.category_icon ?? "key");
   return (
     <Card className="border-border">
       <CardContent className="p-4">
