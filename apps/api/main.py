@@ -196,6 +196,8 @@ def create_app() -> FastAPI:
     from apps.api.app.routers.settings import router as settings_router
     from apps.api.app.routers.notifications import router as notifications_router
     from apps.api.app.routers.tma_auth import router as tma_router
+    from apps.api.app.routers.system import router as system_router
+    from apps.api.app.routers.accounts import router as accounts_router
 
     app.include_router(telegram_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
@@ -209,6 +211,8 @@ def create_app() -> FastAPI:
     app.include_router(settings_router, prefix="/api/v1/settings", tags=["settings"])
     app.include_router(notifications_router, prefix="/api/v1/notifications", tags=["notifications"])
     app.include_router(tma_router, prefix="/api/v1/tma", tags=["tma"])
+    app.include_router(system_router, prefix="/api/v1/system", tags=["system"])
+    app.include_router(accounts_router, prefix="/api/v1/accounts", tags=["accounts"])
 
     @app.get("/api/v1/health", tags=["health"])
     async def health_check() -> dict:

@@ -19,24 +19,31 @@ import {
   LogOut,
   Zap,
   Menu,
+  TrendingUp,
+  Code2,
+  Activity,
+  KeyRound,
 } from "lucide-react";
 
-const NAV = [
+const NAV_MAIN = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/tasks", label: "Tasks", icon: CheckSquare },
   { href: "/members", label: "Members", icon: Users },
   { href: "/broadcasts", label: "Broadcasts", icon: Megaphone },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/analysis", label: "My Analysis", icon: TrendingUp },
+  { href: "/accounts", label: "Account Vault", icon: KeyRound },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-function SidebarContent({
-  onNavigate,
-}: {
-  onNavigate?: () => void;
-}) {
+const NAV_ADMIN = [
+  { href: "/developer", label: "Developer", icon: Code2 },
+  { href: "/health", label: "Health", icon: Activity },
+];
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [location] = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -48,6 +55,27 @@ function SidebarContent({
       },
     },
   });
+
+  const isAdmin = user?.role === "owner" || user?.role === "manager";
+
+  const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: any }) => {
+    const active = location === href || (href !== "/dashboard" && location.startsWith(href));
+    return (
+      <Link
+        href={href}
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium rounded-sm mb-0.5 transition-colors",
+          active
+            ? "bg-sidebar-accent text-sidebar-primary"
+            : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+        )}
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        {label}
+      </Link>
+    );
+  };
 
   return (
     <div className="flex flex-col h-full bg-sidebar">
@@ -62,25 +90,16 @@ function SidebarContent({
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {NAV.map(({ href, label, icon: Icon }) => {
-          const active = location === href || (href !== "/dashboard" && location.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium rounded-sm mb-0.5 transition-colors",
-                active
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </Link>
-          );
-        })}
+        {NAV_MAIN.map((item) => <NavLink key={item.href} {...item} />)}
+
+        {isAdmin && (
+          <>
+            <div className="mt-3 mb-1 px-3">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-sidebar-foreground/30">Admin</span>
+            </div>
+            {NAV_ADMIN.map((item) => <NavLink key={item.href} {...item} />)}
+          </>
+        )}
       </nav>
 
       <div className="border-t border-sidebar-border p-3 shrink-0">
@@ -116,14 +135,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Desktop sidebar — hidden on mobile */}
       <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col">
         <SidebarContent />
       </aside>
 
-      {/* Mobile: top bar + sheet drawer */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        {/* Mobile top bar — hidden on desktop */}
         <header className="md:hidden h-12 border-b border-border bg-sidebar flex items-center px-3 gap-2 shrink-0">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -146,7 +162,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Badge>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto min-w-0">
           {children}
         </main>

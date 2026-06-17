@@ -14,6 +14,10 @@ import TasksPage from "@/pages/tasks";
 import MembersPage from "@/pages/members";
 import BroadcastsPage from "@/pages/broadcasts";
 import AnalyticsPage from "@/pages/analytics";
+import AnalysisPage from "@/pages/analysis";
+import DeveloperPage from "@/pages/developer";
+import HealthPage from "@/pages/health";
+import AccountsPage from "@/pages/accounts";
 import NotificationsPage from "@/pages/notifications";
 import SettingsPage from "@/pages/settings";
 import { AppLayout } from "@/components/layout";
@@ -51,6 +55,10 @@ function Router() {
       <Route path="/members" component={() => <ProtectedRoute component={MembersPage} />} />
       <Route path="/broadcasts" component={() => <ProtectedRoute component={BroadcastsPage} />} />
       <Route path="/analytics" component={() => <ProtectedRoute component={AnalyticsPage} />} />
+      <Route path="/analysis" component={() => <ProtectedRoute component={AnalysisPage} />} />
+      <Route path="/accounts" component={() => <ProtectedRoute component={AccountsPage} />} />
+      <Route path="/developer" component={() => <ProtectedRoute component={DeveloperPage} />} />
+      <Route path="/health" component={() => <ProtectedRoute component={HealthPage} />} />
       <Route path="/notifications" component={() => <ProtectedRoute component={NotificationsPage} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
       <Route component={NotFound} />
