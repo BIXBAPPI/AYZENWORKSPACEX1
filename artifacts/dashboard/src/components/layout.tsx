@@ -93,6 +93,7 @@ const NAV_ADMIN: NavItem[] = [
     icon: Shield,
     children: [
       { href: "/admin", label: "User Management" },
+      { href: "/telegram-link", label: "Telegram Linking" },
       { href: "/tutorials?admin=true", label: "Slide Generator" },
       { href: "/feedback", label: "Feedback Center" },
       { href: "/analytics", label: "Analytics" },
