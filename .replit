@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "python-3.12", "web", "postgresql-16"]
+modules = ["nodejs-20", "python-3.12", "web"]
 
 [deployment]
 router = "application"
@@ -20,23 +20,27 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "AYZEN Dashboard"
+args = "Python API"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Node API Server"
 
-[[workflows.workflow]]
-name = "AYZEN Dashboard"
-author = "agent"
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "AYZEN Dashboard"
 
-[workflows.workflow.metadata]
-outputType = "webview"
+[[workflows.workflow]]
+name = "Python API"
+author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "PORT=5000 BASE_PATH=/ pnpm --filter @workspace/dashboard run dev"
-waitForPort = 5000
+args = "PYTHONPATH=/home/runner/workspace /home/runner/workspace/.venv/bin/python -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload"
+waitForPort = 8000
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[workflows.workflow]]
 name = "Node API Server"
@@ -49,6 +53,18 @@ waitForPort = 8080
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow]]
+name = "AYZEN Dashboard"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=5000 BASE_PATH=/ pnpm --filter @workspace/dashboard run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
