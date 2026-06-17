@@ -13,7 +13,6 @@ import {
   CheckSquare,
   Users,
   Megaphone,
-  BarChart3,
   Bell,
   Settings,
   LogOut,
@@ -26,6 +25,7 @@ import {
   User,
   Fuel,
   Bot,
+  Shield,
 } from "lucide-react";
 
 const NAV_MAIN = [
@@ -43,6 +43,7 @@ const NAV_MAIN = [
 ];
 
 const NAV_ADMIN = [
+  { href: "/admin", label: "Admin Panel", icon: Shield },
   { href: "/ai", label: "AI Assistant", icon: Bot },
   { href: "/developer", label: "Developer", icon: Code2 },
   { href: "/health", label: "Health", icon: Activity },
@@ -82,6 +83,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     );
   };
 
+  // Tier badge based on XP
+  const xp = user?.global_xp || 0;
+  const tier = xp >= 20000 ? "💎" : xp >= 5000 ? "🥇" : xp >= 1000 ? "🥈" : "🥉";
+
   return (
     <div className="flex flex-col h-full bg-sidebar">
       <div className="h-14 border-b border-sidebar-border flex items-center px-4 gap-2 shrink-0">
@@ -111,16 +116,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="border-t border-sidebar-border p-3 shrink-0">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-7 h-7 rounded-sm bg-primary/20 flex items-center justify-center">
-            <span className="text-xs font-bold text-primary">
-              {user?.full_name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "?"}
-            </span>
+          <div className="w-7 h-7 rounded-sm bg-primary/20 flex items-center justify-center text-xs font-bold text-primary relative">
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="" className="w-full h-full rounded-sm object-cover" />
+            ) : (
+              (user?.full_name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? "?")
+            )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-sidebar-foreground truncate">
+            <div className="text-xs font-medium text-sidebar-foreground truncate flex items-center gap-1">
               {user?.full_name ?? user?.email ?? "User"}
+              <span title={`${xp} XP`}>{tier}</span>
             </div>
-            <div className="text-[10px] text-sidebar-foreground/50 truncate capitalize">{user?.role ?? "member"}</div>
+            <div className="text-[10px] text-sidebar-foreground/50 truncate capitalize">{user?.role ?? "member"} · {xp.toLocaleString()} XP</div>
           </div>
         </div>
         <Button

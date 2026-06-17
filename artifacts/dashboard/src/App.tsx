@@ -25,6 +25,7 @@ import ProfilePage from "@/pages/profile";
 import GasTrackerPage from "@/pages/gas-tracker";
 import AIAssistantPage from "@/pages/ai-assistant";
 import HomePage from "@/pages/home";
+import AdminPage from "@/pages/admin";
 import { AppLayout } from "@/components/layout";
 
 const queryClient = new QueryClient({
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
       <Route path="/gas" component={() => <ProtectedRoute component={GasTrackerPage} />} />
       <Route path="/ai" component={() => <ProtectedRoute component={AIAssistantPage} />} />
+      <Route path="/admin" component={() => <ProtectedRoute component={AdminPage} />} />
       <Route component={NotFound} />
     </Switch>
   );

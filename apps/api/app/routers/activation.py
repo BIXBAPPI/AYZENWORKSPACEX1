@@ -44,10 +44,13 @@ async def list_codes(request: Request) -> list[dict]:
                        u.email AS used_by_email
                 FROM activation_codes ac
                 LEFT JOIN users u ON u.id = ac.used_by
-                WHERE ac.created_by = :uid
+                WHERE ac.created_by IN (
+                    SELECT id FROM users WHERE tenant_id = :tid
+                )
                 ORDER BY ac.created_at DESC
+                LIMIT 200
             """),
-            {"uid": str(user.user_id)}
+            {"tid": str(user.tenant_id)}
         )
         rows = r.mappings().fetchall()
         return [

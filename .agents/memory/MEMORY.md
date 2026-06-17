@@ -8,3 +8,6 @@
 - [Express 5 wildcard route](express5-wildcard.md) — Express 5 uses path-to-regexp v8; bare `"*"` crashes on startup, must use `"*splat"` for catch-all SPA fallback
 - [V4 auth pattern](v4-auth-pattern.md) — activation code required for non-first user; 2FA returns requires_2fa:true then POST /auth/verify-2fa; new pages use raw fetch not generated hooks
 - [V4 admin seed](v4-admin-seed.md) — admin bibappix420@gmail.com is seeded via psql; first user gets owner role with no activation code required; subsequent users need valid AYZEN-XXXX code
+- [Admin API bugs fixed](admin-api-bugs.md) — error_logs table uses timestamp not created_at; tasks column is assignee_id not assigned_to; SQLAlchemy tx abort after exception needs explicit session.rollback() before further queries
+- [Firebase + Groq packages](python-optional-packages.md) — firebase_admin 7.4.0 and groq 1.4.0 installed in .pythonlibs; importable from .venv/bin/python (sys.path includes .pythonlibs); lazy import pattern used in firebase_auth.py and ai_assistant.py
+- [pending_link_code on users](pending-link-code.md) — Telegram link codes stored as pending_link_code + pending_link_expires on users table (24h TTL), NOT on user_bot_state; bot_user_service.validate_and_link uses this column

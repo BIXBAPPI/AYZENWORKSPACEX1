@@ -207,6 +207,8 @@ def create_app() -> FastAPI:
     from apps.api.app.routers.wallet_xp import router as wallet_xp_router
     from apps.api.app.routers.ai_assistant import router as ai_router
     from apps.api.app.routers.telemetry import router as telemetry_router
+    from apps.api.app.routers.admin import router as admin_router
+    from apps.api.app.routers.firebase_auth import router as firebase_router
 
     app.include_router(telegram_router, prefix="/api/v1")
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
@@ -231,6 +233,8 @@ def create_app() -> FastAPI:
     app.include_router(wallet_xp_router, prefix="/api/v1/wallet", tags=["wallet"])
     app.include_router(ai_router, prefix="/api/v1/ai", tags=["ai"])
     app.include_router(telemetry_router, prefix="/api/v1/telemetry", tags=["telemetry"])
+    app.include_router(admin_router, prefix="/api/v1/admin", tags=["admin"])
+    app.include_router(firebase_router, prefix="/api/v1/auth", tags=["auth"])
 
     @app.get("/api/v1/health", tags=["health"])
     async def health_check() -> dict:
