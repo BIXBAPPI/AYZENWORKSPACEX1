@@ -10,8 +10,7 @@ kind = "api"
   paths = ["/api/v1"]
 
   [services.development]
-  run = "bash -c 'PYTHONPATH=/home/runner/workspace WATCHFILES_IGNORE_PATHS=/home/runner/workspace/node_modules,/home/runner/workspace/.venv /home/runner/workspace/.venv/bin/python -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload || sleep infinity'"
+  run = "bash -c 'PYTHONPATH=/home/runner/workspace WATCHFILES_IGNORE_PATHS=/home/runner/workspace/node_modules,/home/runner/workspace/.pythonlibs /home/runner/workspace/.pythonlibs/bin/python3 -m uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload || sleep infinity'"
 
   [services.env]
   PORT = "8000"
-  
