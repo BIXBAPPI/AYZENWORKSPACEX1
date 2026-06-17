@@ -11,3 +11,4 @@
 - [Admin API bugs fixed](admin-api-bugs.md) — error_logs table uses timestamp not created_at; tasks column is assignee_id not assigned_to; SQLAlchemy tx abort after exception needs explicit session.rollback() before further queries
 - [Firebase + Groq packages](python-optional-packages.md) — firebase_admin 7.4.0 and groq 1.4.0 installed in .pythonlibs; importable from .venv/bin/python (sys.path includes .pythonlibs); lazy import pattern used in firebase_auth.py and ai_assistant.py
 - [pending_link_code on users](pending-link-code.md) — Telegram link codes stored as pending_link_code + pending_link_expires on users table (24h TTL), NOT on user_bot_state; bot_user_service.validate_and_link uses this column
+- [Python venv recovery](python-venv-recovery.md) — .venv gets lost on repl restart; recreate with `uv venv .venv` then `uv pip install --python .venv/bin/python -r apps/api/requirements.txt`; do NOT use --user flag inside venv

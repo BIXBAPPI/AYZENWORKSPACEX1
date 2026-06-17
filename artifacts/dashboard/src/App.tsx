@@ -26,6 +26,10 @@ import GasTrackerPage from "@/pages/gas-tracker";
 import AIAssistantPage from "@/pages/ai-assistant";
 import HomePage from "@/pages/home";
 import AdminPage from "@/pages/admin";
+import TutorialsPage from "@/pages/tutorials";
+import ToolsPage from "@/pages/tools";
+import SubscriptionPage from "@/pages/subscription";
+import FeedbackPage from "@/pages/feedback";
 import { AppLayout } from "@/components/layout";
 
 const queryClient = new QueryClient({
@@ -72,6 +76,10 @@ function Router() {
       <Route path="/gas" component={() => <ProtectedRoute component={GasTrackerPage} />} />
       <Route path="/ai" component={() => <ProtectedRoute component={AIAssistantPage} />} />
       <Route path="/admin" component={() => <ProtectedRoute component={AdminPage} />} />
+      <Route path="/tutorials" component={() => <ProtectedRoute component={TutorialsPage} />} />
+      <Route path="/tools" component={() => <ProtectedRoute component={ToolsPage} />} />
+      <Route path="/subscription" component={() => <ProtectedRoute component={SubscriptionPage} />} />
+      <Route path="/feedback" component={() => <ProtectedRoute component={FeedbackPage} />} />
       <Route component={NotFound} />
     </Switch>
   );
